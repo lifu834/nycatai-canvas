@@ -1,10 +1,11 @@
 import type { ThemeConfig } from "antd";
 import { theme as antdTheme } from "antd";
 
-// NYCATAI 保守版换肤：主按钮保持黑色中性，仅链接用主站陶土橙 accent（--c-accent / --c-accent-hover）。
+// NYCATAI 点缀式换肤：中性色保持上游原样，主站陶土橙只落在重点位置 = 主按钮/链接/选中态。
+// 色值来自主站 --c-accent/--c-accent-hover/--c-accent-light（assets/css/main.css）。
 const nycataiAccent = {
-    light: { link: "#c4704b", linkHover: "#b5613e" },
-    dark: { link: "#d4815c", linkHover: "#e09570" },
+    light: { primary: "#c4704b", hover: "#b5613e", onPrimary: "#ffffff", selectedBg: "rgba(196, 112, 75, 0.10)", selectedHoverBg: "rgba(196, 112, 75, 0.16)" },
+    dark: { primary: "#d4815c", hover: "#e09570", onPrimary: "#1a1915", selectedBg: "rgba(212, 129, 92, 0.16)", selectedHoverBg: "rgba(212, 129, 92, 0.22)" },
 };
 
 const neutral = {
@@ -36,21 +37,22 @@ const neutral = {
 
 export function getAntThemeConfig(dark: boolean): ThemeConfig {
     const color = dark ? neutral.dark : neutral.light;
+    const accent = dark ? nycataiAccent.dark : nycataiAccent.light;
 
     return {
         algorithm: dark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
         cssVar: { key: dark ? "infinite-canvas-dark" : "infinite-canvas-light" },
         token: {
-            colorPrimary: color.primary,
-            colorInfo: color.primary,
-            colorLink: (dark ? nycataiAccent.dark : nycataiAccent.light).link,
-            colorLinkHover: (dark ? nycataiAccent.dark : nycataiAccent.light).linkHover,
-            colorLinkActive: (dark ? nycataiAccent.dark : nycataiAccent.light).link,
-            colorTextLightSolid: color.primaryText,
+            colorPrimary: accent.primary,
+            colorInfo: accent.primary,
+            colorLink: accent.primary,
+            colorLinkHover: accent.hover,
+            colorLinkActive: accent.primary,
+            colorTextLightSolid: accent.onPrimary,
             colorBgElevated: color.elevatedBg,
             controlItemBgHover: color.itemHoverBg,
-            controlItemBgActive: color.itemSelectedBg,
-            controlItemBgActiveHover: color.itemSelectedHoverBg,
+            controlItemBgActive: accent.selectedBg,
+            controlItemBgActiveHover: accent.selectedHoverBg,
         },
         components: {
             Button: {
@@ -60,23 +62,23 @@ export function getAntThemeConfig(dark: boolean): ThemeConfig {
                 colorBgElevated: color.elevatedBg,
                 colorText: color.itemText,
                 controlItemBgHover: color.itemHoverBg,
-                controlItemBgActive: color.itemSelectedBg,
-                controlItemBgActiveHover: color.itemSelectedHoverBg,
+                controlItemBgActive: accent.selectedBg,
+                controlItemBgActiveHover: accent.selectedHoverBg,
             },
             Menu: {
                 popupBg: color.elevatedBg,
-                itemActiveBg: color.itemSelectedBg,
+                itemActiveBg: accent.selectedBg,
                 itemHoverBg: color.itemHoverBg,
-                itemSelectedBg: color.itemSelectedBg,
+                itemSelectedBg: accent.selectedBg,
                 itemSelectedColor: color.itemText,
                 darkPopupBg: neutral.dark.elevatedBg,
                 darkItemHoverBg: neutral.dark.itemHoverBg,
-                darkItemSelectedBg: neutral.dark.itemSelectedBg,
+                darkItemSelectedBg: nycataiAccent.dark.selectedBg,
                 darkItemSelectedColor: neutral.dark.itemText,
             },
             Select: {
                 optionActiveBg: color.itemHoverBg,
-                optionSelectedBg: color.itemSelectedBg,
+                optionSelectedBg: accent.selectedBg,
                 optionSelectedColor: color.itemText,
             },
             Table: {

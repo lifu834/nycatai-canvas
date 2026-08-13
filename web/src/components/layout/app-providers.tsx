@@ -42,15 +42,16 @@ export function AppProviders({ children }: { children: ReactNode }) {
         dayjs.locale(locale === "zh-CN" ? "zh-cn" : "en");
     }, [locale, t]);
 
+    // NYCATAI: ProConfigProvider 放外层——它的 dark 预设会派生覆盖 colorPrimary，内层我方主题才是最终值
     return (
-        <ConfigProvider locale={locale === "zh-CN" ? zhCN : enUS} theme={getAntThemeConfig(dark)}>
-            <ProConfigProvider dark={dark}>
+        <ProConfigProvider dark={dark}>
+            <ConfigProvider locale={locale === "zh-CN" ? zhCN : enUS} theme={getAntThemeConfig(dark)}>
                 <App>
                     <QueryClientProvider client={queryClient}>
                         <ClientRootInit>{children}</ClientRootInit>
                     </QueryClientProvider>
                 </App>
-            </ProConfigProvider>
-        </ConfigProvider>
+            </ConfigProvider>
+        </ProConfigProvider>
     );
 }

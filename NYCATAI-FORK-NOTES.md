@@ -16,7 +16,8 @@
 | `web/src/components/layout/app-top-nav.tsx` | 右侧动作区插 `<NycataiUsageBadge/>`（1 行 + import） | 同上 |
 | `web/src/i18n/locales/zh-CN.ts`、`en-US.ts` | `meta.*` 品牌 + `nycatai.*` 键组 | 冲突时保留我方两块，其余全取上游 |
 | `web/src/main.tsx` | 引入 `nycatai-theme.css`（必须在 globals.css 之后）+ 字体栈改主站同款 | 上游改字体行时保留我方 |
-| `web/src/lib/app-theme.ts` | antd colorLink 三项改陶土橙（保守版换肤，主按钮仍黑） | 上游重构主题结构时重新挂 |
+| `web/src/lib/app-theme.ts` | 点缀式换肤：colorPrimary/colorLink/选中态 → 陶土橙，中性色不动 | 上游重构主题结构时重新挂 |
+| `web/src/components/layout/app-providers.tsx` | ProConfigProvider 换到外层（其 dark 预设会派生覆盖 colorPrimary） | 上游改 provider 链时重点回归 |
 
 ## nycatai 专属文件（无冲突面）
 
