@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import { navigationTools, type NavigationToolSlug } from "@/constant/navigation-tools";
+import { NycataiCopilot } from "@/components/nycatai/copilot-panel";
 import { NycataiUsageBadge } from "@/components/nycatai/nycatai-usage-badge";
 import { AppConfigModal } from "@/components/layout/app-config-modal";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
@@ -90,6 +91,7 @@ export function AppTopNav() {
 
             <MobileNavDrawer open={mobileNavOpen} activeToolSlug={activeToolSlug} onClose={() => setMobileNavOpen(false)} />
             <AppConfigModal />
+            <NycataiCopilot />
         </>
     );
 }

@@ -13,7 +13,7 @@
 | `web/src/components/canvas/canvas-plugin-manager-modal.tsx` | 第三方插件 URL 安装 Tab 由 `VITE_ALLOW_PLUGIN_URL_INSTALL` 门禁（默认关） | 上游改 Tabs 结构时重点回归 |
 | `web/package.json` | 加 `test`/`deploy:pages` 脚本 + devDeps（vitest / happy-dom） | 合并时保留我方行 |
 | `web/src/pages/image/index.tsx`、`video/index.tsx` | 生成按钮上方插 `<NycataiCostHint/>`（各 1 行 + import） | 上游改按钮区布局时重新挂 |
-| `web/src/components/layout/app-top-nav.tsx` | 右侧动作区插 `<NycataiUsageBadge/>`（1 行 + import） | 同上 |
+| `web/src/components/layout/app-top-nav.tsx` | 右侧动作区插 `<NycataiUsageBadge/>`；fragment 尾部挂 `<NycataiCopilot/>`（全局挂载，自身按 canvasContext+凭据决定显隐）；logo 换 mascot img | 同上 |
 | `web/src/i18n/locales/zh-CN.ts`、`en-US.ts` | `meta.*` 品牌 + `nycatai.*` 键组 | 冲突时保留我方两块，其余全取上游 |
 | `web/src/main.tsx` | 引入 `nycatai-theme.css`（必须在 globals.css 之后）+ 字体栈改主站同款 | 上游改字体行时保留我方 |
 | `web/src/lib/app-theme.ts` | 点缀式换肤：colorPrimary/colorLink/选中态 → 陶土橙，中性色不动 | 上游重构主题结构时重新挂 |
