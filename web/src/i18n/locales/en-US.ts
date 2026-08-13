@@ -3,6 +3,13 @@ export default {
         title: "NYCATAI Infinite Canvas",
         description: "NYCATAI Infinite Canvas · multi-model AI creation workbench",
     },
+    nycatai: {
+        estCost: "Est. cost",
+        estMark: " (approx.)",
+        usage: "Spent",
+        usageError: "Usage unavailable",
+        usageTitle: "Total spend on this key, click to refresh",
+    },
     theme: { toggle: "Toggle theme" },
     common: {
         cancel: "Cancel",

@@ -3,6 +3,13 @@ export default {
         title: "NYCATAI 无限画布",
         description: "NYCATAI 无限画布 · AI 多模型创作工作台",
     },
+    nycatai: {
+        estCost: "预估费用",
+        estMark: "（估）",
+        usage: "已消耗",
+        usageError: "消耗查询失败",
+        usageTitle: "该密钥累计消耗，点击刷新",
+    },
     theme: { toggle: "切换主题" },
     common: {
         cancel: "取消",
