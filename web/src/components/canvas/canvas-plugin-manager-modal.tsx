@@ -207,10 +207,12 @@ export function CanvasPluginManagerModal({ open, onClose }: { open: boolean; onC
         </div>
     );
 
+    // NYCATAI: 托管部署默认关闭"按 URL 安装第三方插件"（远程 JS 无沙盒执行）；本地开发可用 VITE_ALLOW_PLUGIN_URL_INSTALL=true 打开。
+    const allowUrlInstall = import.meta.env.VITE_ALLOW_PLUGIN_URL_INSTALL === "true";
     const tabs = [
         { key: "official", label: t("canvas.plugins.official"), children: officialTab },
         ...(localPlugins.length > 0 ? [{ key: "local", label: t("canvas.plugins.local"), children: localTab }] : []),
-        { key: "third", label: t("canvas.plugins.thirdParty"), children: thirdPartyTab },
+        ...(allowUrlInstall ? [{ key: "third", label: t("canvas.plugins.thirdParty"), children: thirdPartyTab }] : []),
     ];
 
     return (

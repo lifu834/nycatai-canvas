@@ -1,7 +1,7 @@
 export default {
     meta: {
-        title: "Infinite Canvas",
-        description: "An infinite canvas creation tool",
+        title: "NYCATAI Infinite Canvas",
+        description: "NYCATAI Infinite Canvas · multi-model AI creation workbench",
     },
     theme: { toggle: "Toggle theme" },
     common: {

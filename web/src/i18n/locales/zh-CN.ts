@@ -1,7 +1,7 @@
 export default {
     meta: {
-        title: "无限画布",
-        description: "一个无限画布创作工具",
+        title: "NYCATAI 无限画布",
+        description: "NYCATAI 无限画布 · AI 多模型创作工作台",
     },
     theme: { toggle: "切换主题" },
     common: {

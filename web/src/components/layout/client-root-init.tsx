@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { App } from "antd";
 import { useTranslation } from "react-i18next";
 
+import { applyNycataiBootstrap } from "@/lib/nycatai/bootstrap";
 import { createModelChannel, useConfigStore } from "@/stores/use-config-store";
 import { usePromptSourceScheduler } from "@/hooks/use-prompt-source-scheduler";
 
@@ -18,6 +19,12 @@ export function ClientRootInit({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         if (handledConfigParams.current) return;
+        // NYCATAI: hash/query 里的 apiKey/gateway 由受管渠道注入接管；命中则跳过上游的单渠道导入逻辑。
+        if (applyNycataiBootstrap()) {
+            handledConfigParams.current = true;
+            message.success(t("config.importedDirectConfig"));
+            return;
+        }
         const searchParams = new URLSearchParams(window.location.search);
         const baseUrl = searchParams.get("baseUrl") || searchParams.get("baseurl");
         const apiKey = searchParams.get("apiKey") || searchParams.get("apikey");
