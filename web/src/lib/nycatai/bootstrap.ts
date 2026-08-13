@@ -56,8 +56,14 @@ export function buildNycataiChannels(gateway: string, apiKey: string, existing: 
 export function applyNycataiBootstrap(): boolean {
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#\/?/, "").replace(/^\?/, ""));
     const searchParams = new URLSearchParams(window.location.search);
-    const apiKey = pickParam([hashParams, searchParams], "apiKey");
-    const gatewayRaw = pickParam([hashParams, searchParams], "gateway");
+    let apiKey = pickParam([hashParams], "apiKey");
+    let gatewayRaw = pickParam([hashParams], "gateway");
+    if (!apiKey && !gatewayRaw) {
+        // query 兜底：`?baseUrl=` 组合是上游单渠道导入语义，必须让给上游处理，不能被我们劫持。
+        if (searchParams.has("baseUrl") || searchParams.has("baseurl")) return false;
+        apiKey = pickParam([searchParams], "apiKey");
+        gatewayRaw = pickParam([searchParams], "gateway");
+    }
     if (!apiKey && !gatewayRaw) return false;
     scrubParams(hashParams, searchParams);
 

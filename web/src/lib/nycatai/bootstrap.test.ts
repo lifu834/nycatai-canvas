@@ -1,0 +1,157 @@
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { defaultConfig, defaultWebdavSyncConfig, encodeChannelModel, useConfigStore, type ModelChannel } from "@/stores/use-config-store";
+
+import { applyNycataiBootstrap } from "./bootstrap";
+import { DEFAULT_GATEWAY, NYCATAI_GROUPS } from "./catalog";
+
+function setUrl(pathAndParams: string) {
+    window.history.replaceState(null, "", pathAndParams);
+}
+
+function resetStore() {
+    useConfigStore.setState({
+        config: structuredClone(defaultConfig),
+        webdav: { ...defaultWebdavSyncConfig },
+        isConfigOpen: false,
+    });
+}
+
+function channels() {
+    return useConfigStore.getState().config.channels;
+}
+
+function managedChannel(group: string): ModelChannel | undefined {
+    return channels().find((channel) => channel.id === `nycatai-${group}`);
+}
+
+beforeEach(() => {
+    localStorage.clear();
+    resetStore();
+    setUrl("/");
+});
+
+describe("applyNycataiBootstrap · 参数解析", () => {
+    it("无参数时返回 false 且不动 store", () => {
+        expect(applyNycataiBootstrap()).toBe(false);
+        expect(channels()).toHaveLength(1);
+        expect(channels()[0].id).toBe("default");
+    });
+
+    it("hash 注入：建三个受管渠道并抹掉 hash", () => {
+        setUrl("/#apiKey=sk-test-1&gateway=https://api.nycatai.com");
+        expect(applyNycataiBootstrap()).toBe(true);
+        expect(window.location.hash).toBe("");
+        expect(window.location.search).toBe("");
+        for (const def of NYCATAI_GROUPS) {
+            const channel = managedChannel(def.group);
+            expect(channel).toBeDefined();
+            expect(channel!.baseUrl).toBe(`https://api.nycatai.com/${def.group}`);
+            expect(channel!.apiKey).toBe("sk-test-1");
+            expect(channel!.models.map((model) => model.name)).toEqual(def.models.map((model) => model.name));
+        }
+    });
+
+    it("hash 大小写别名 apikey 可用", () => {
+        setUrl("/#apikey=sk-alias");
+        expect(applyNycataiBootstrap()).toBe(true);
+        expect(managedChannel("image")!.apiKey).toBe("sk-alias");
+    });
+
+    it("省略 gateway 时用默认网关", () => {
+        setUrl("/#apiKey=sk-x");
+        applyNycataiBootstrap();
+        expect(managedChannel("image")!.baseUrl).toBe(`${DEFAULT_GATEWAY}/image`);
+    });
+
+    it("gateway 尾斜杠被归一", () => {
+        setUrl("/#apiKey=sk-x&gateway=https://vip.nycatai.com///");
+        applyNycataiBootstrap();
+        expect(managedChannel("video")!.baseUrl).toBe("https://vip.nycatai.com/video");
+    });
+
+    it("query 兜底可用，参数同样被抹除", () => {
+        setUrl("/?apiKey=sk-query");
+        expect(applyNycataiBootstrap()).toBe(true);
+        expect(window.location.search).toBe("");
+        expect(managedChannel("codex")!.apiKey).toBe("sk-query");
+    });
+
+    it("query 带 baseUrl 时让给上游导入逻辑（不劫持）", () => {
+        setUrl("/?baseUrl=https://example.com/v1&apiKey=sk-upstream");
+        expect(applyNycataiBootstrap()).toBe(false);
+        expect(managedChannel("image")).toBeUndefined();
+        // 参数原样保留给上游 handler
+        expect(window.location.search).toContain("baseUrl=");
+        expect(window.location.search).toContain("apiKey=");
+    });
+
+    it("hash 里我方参数之外的内容保留", () => {
+        setUrl("/#apiKey=sk-x&foo=bar");
+        applyNycataiBootstrap();
+        expect(window.location.hash).toBe("#foo=bar");
+    });
+});
+
+describe("applyNycataiBootstrap · 渠道合并", () => {
+    it("默认模型指向受管渠道，audio 缺省不动", () => {
+        setUrl("/#apiKey=sk-x");
+        applyNycataiBootstrap();
+        const { config } = useConfigStore.getState();
+        expect(config.imageModel).toBe(encodeChannelModel("nycatai-image", "gpt-image-2"));
+        expect(config.videoModel).toBe(encodeChannelModel("nycatai-video", "veo31-fast"));
+        expect(config.textModel).toBe(encodeChannelModel("nycatai-codex", "gpt-5.5"));
+        expect(config.audioModel).toBe(defaultConfig.audioModel);
+        expect(config.model).toBe(config.imageModel);
+    });
+
+    it("二次注入只轮换受管渠道 key，不产生重复渠道", () => {
+        setUrl("/#apiKey=sk-old");
+        applyNycataiBootstrap();
+        setUrl("/#apiKey=sk-new");
+        applyNycataiBootstrap();
+        expect(channels().filter((channel) => channel.id.startsWith("nycatai-"))).toHaveLength(NYCATAI_GROUPS.length);
+        expect(managedChannel("image")!.apiKey).toBe("sk-new");
+        expect(channels().find((channel) => channel.id === "default")!.apiKey).toBe("");
+    });
+
+    it("用户自建渠道原样保留", () => {
+        useConfigStore.setState((state) => ({
+            config: {
+                ...state.config,
+                channels: [...state.config.channels, { id: "mine", name: "自建", baseUrl: "https://my.example.com", apiKey: "sk-mine", apiFormat: "openai" as const, models: [{ name: "my-model", capability: "text" as const }] }],
+            },
+        }));
+        setUrl("/#apiKey=sk-x");
+        applyNycataiBootstrap();
+        const mine = channels().find((channel) => channel.id === "mine");
+        expect(mine).toBeDefined();
+        expect(mine!.apiKey).toBe("sk-mine");
+        expect(mine!.baseUrl).toBe("https://my.example.com");
+    });
+
+    it("受管渠道上用户配置的 per-model 脚本在重注入后保留", () => {
+        setUrl("/#apiKey=sk-x");
+        applyNycataiBootstrap();
+        useConfigStore.setState((state) => ({
+            config: {
+                ...state.config,
+                channels: state.config.channels.map((channel) => (channel.id === "nycatai-video" ? { ...channel, models: channel.models.map((model) => (model.name === "kling-v2v" ? { ...model, script: "return {url: 'x'}" } : model)) } : channel)),
+            },
+        }));
+        setUrl("/#apiKey=sk-rotated");
+        applyNycataiBootstrap();
+        const model = managedChannel("video")!.models.find((item) => item.name === "kling-v2v");
+        expect(model!.script).toBe("return {url: 'x'}");
+        expect(managedChannel("video")!.apiKey).toBe("sk-rotated");
+    });
+
+    it("重复注入后模型选项列表无重复", () => {
+        setUrl("/#apiKey=sk-a");
+        applyNycataiBootstrap();
+        setUrl("/#apiKey=sk-b");
+        applyNycataiBootstrap();
+        const options = useConfigStore.getState().config.models;
+        expect(new Set(options).size).toBe(options.length);
+    });
+});

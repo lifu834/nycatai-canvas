@@ -11,11 +11,13 @@
 | `web/index.html` | title / meta description 品牌化 | 直接保留我方版本 |
 | `web/src/i18n/locales/zh-CN.ts`、`en-US.ts` | 仅 `meta.title` / `meta.description` | 冲突时保留我方两行，其余全取上游 |
 | `web/src/components/canvas/canvas-plugin-manager-modal.tsx` | 第三方插件 URL 安装 Tab 由 `VITE_ALLOW_PLUGIN_URL_INSTALL` 门禁（默认关） | 上游改 Tabs 结构时重点回归 |
+| `web/package.json` | 加 `test` 脚本 + devDeps（vitest / happy-dom） | 合并时保留我方三行 |
 
 ## nycatai 专属文件（无冲突面）
 
 - `web/src/lib/nycatai/catalog.ts` — 三分组模型目录 + 价格元数据；video 列表 provisional，P1 用真实 key 校准。
-- `web/src/lib/nycatai/bootstrap.ts` — hash/query 注入 → 三个 `nycatai-` 受管渠道；只动受管渠道，保留用户自建渠道与 per-model 脚本。
+- `web/src/lib/nycatai/bootstrap.ts` — hash/query 注入 → 三个 `nycatai-` 受管渠道；只动受管渠道，保留用户自建渠道与 per-model 脚本。**规则：query 里出现 `baseUrl` 时让给上游导入逻辑，不劫持。**
+- `web/src/lib/nycatai/bootstrap.test.ts` + `web/vitest.config.ts` — 单测（`bun run test` / `node node_modules/vitest/vitest.mjs run`）；合并上游后必跑。
 
 ## 部署约定
 
