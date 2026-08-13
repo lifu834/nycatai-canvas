@@ -1,0 +1,27 @@
+/* NYCATAI 品牌主题（保守版）：暖纸中性色阶 + 品牌字体，主按钮保持黑色，accent 只经 app-theme.ts 用于链接。
+ * 原理：Tailwind v4 工具类编译为 var(--color-stone-*) 引用，本文件在 globals.css 之后加载（见 main.tsx），
+ * 用纯变量覆盖使全库 stone-* 工具类整体换肤，零组件改动。
+ * 色值对齐 nycatai 主站 assets/css/main.css（--c-page/--c-subtle/--c-border/--c-txt-* 等）。 */
+
+:root {
+    --color-stone-50: #faf9f7; /* --c-page (light) */
+    --color-stone-100: #f5f3ef; /* --c-subtle */
+    --color-stone-200: #e8e5de; /* --c-border */
+    --color-stone-300: #d9d4cb;
+    --color-stone-400: #9b958e; /* --c-txt-tertiary */
+    --color-stone-500: #6b6560; /* --c-txt-secondary */
+    --color-stone-800: #2c2a25; /* --c-subtle (dark) */
+    --color-stone-900: #242320; /* --c-surface (dark) */
+    --color-stone-950: #1a1915; /* --c-page (dark) */
+
+    --background: #faf9f7;
+    --card: #ffffff;
+    --border: #e8e5de;
+    --font-sans: "Inter", system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.dark {
+    --background: #1a1915;
+    --card: #242320;
+    --border: #3d3a33;
+}

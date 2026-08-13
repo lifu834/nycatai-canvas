@@ -1,6 +1,12 @@
 import type { ThemeConfig } from "antd";
 import { theme as antdTheme } from "antd";
 
+// NYCATAI 保守版换肤：主按钮保持黑色中性，仅链接用主站陶土橙 accent（--c-accent / --c-accent-hover）。
+const nycataiAccent = {
+    light: { link: "#c4704b", linkHover: "#b5613e" },
+    dark: { link: "#d4815c", linkHover: "#e09570" },
+};
+
 const neutral = {
     light: {
         primary: "#171717",
@@ -37,9 +43,9 @@ export function getAntThemeConfig(dark: boolean): ThemeConfig {
         token: {
             colorPrimary: color.primary,
             colorInfo: color.primary,
-            colorLink: color.primary,
-            colorLinkHover: color.primaryHover,
-            colorLinkActive: color.primary,
+            colorLink: (dark ? nycataiAccent.dark : nycataiAccent.light).link,
+            colorLinkHover: (dark ? nycataiAccent.dark : nycataiAccent.light).linkHover,
+            colorLinkActive: (dark ? nycataiAccent.dark : nycataiAccent.light).link,
             colorTextLightSolid: color.primaryText,
             colorBgElevated: color.elevatedBg,
             controlItemBgHover: color.itemHoverBg,
