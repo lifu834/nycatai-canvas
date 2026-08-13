@@ -30,6 +30,10 @@
 - 网关 CORS 只放行 `*.nycatai.com` 源：**本地 dev（localhost 源）无法直连网关**，生图/视频/余额请求会被拒；顶栏消耗徽标此时显示"消耗查询失败"（优雅降级已验证）。全链路验证在生产域名（或加 hosts 映射）做。
 - 创意工坊令牌是 unlimited_quota，new-api subscription 端点对其返回占位大数 → 拿不到真实余额，顶栏展示「该密钥已消耗」（GetUsage）。用户级余额需 new-api 侧新端点，列为后续项。
 
+## 本机工具链备注
+
+- 本机 node v22 跑 `vite build` 会间歇性 Segmentation fault（esbuild service 被杀，与源码无关）；`bun node_modules/vite/bin/vite.js build` 稳定。构建/部署遇 139 退出码换 bun 跑。
+
 ## 部署约定
 
 - CF Pages 项目 `nycatai-canvas` → canvas.nycatai.com；浏览器直连灰云网关，**绝不走 Pages 同源代理**（CF 100s → 524，studio2 教训）。

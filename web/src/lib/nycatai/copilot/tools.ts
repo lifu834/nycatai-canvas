@@ -126,6 +126,8 @@ export async function runCopilotTool(name: string, argsJson: string, deps: Copil
             return JSON.stringify({ ok: true, summary: summarizeCanvasAgentOps(ops), createdNodeIds: createdIds, nodeCount: next.nodes.length });
         }
         if (isSiteTool(name) && (name === "generation_get_status" || name === "prompts_search" || name === "assets_list")) {
+            // 轮询自带间隔：生成动辄 10s+，模型会连环轮询，每次轮询都是一整轮 LLM 调用；等几秒再采样省 token 也更准
+            if (name === "generation_get_status") await new Promise((resolve) => setTimeout(resolve, 4000));
             const result = await runSiteTool(name, args, deps.navigate, { canvasSnapshot: deps.context.snapshot });
             return JSON.stringify(result);
         }
