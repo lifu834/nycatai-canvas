@@ -8,6 +8,7 @@
         "build": "vite build",
         "typecheck": "tsc --noEmit",
         "test": "vitest run",
+        "deploy:pages": "vite build && wrangler pages deploy dist --project-name nycatai-canvas --branch main",
         "start": "vite preview --host 0.0.0.0 --port 3000",
         "format": "prettier --write .",
         "format:check": "prettier --check ."
