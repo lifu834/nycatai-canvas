@@ -99,7 +99,7 @@ describe("applyNycataiBootstrap · 渠道合并", () => {
         applyNycataiBootstrap();
         const { config } = useConfigStore.getState();
         expect(config.imageModel).toBe(encodeChannelModel("nycatai-image", "gpt-image-2"));
-        expect(config.videoModel).toBe(encodeChannelModel("nycatai-video", "veo31-fast"));
+        expect(config.videoModel).toBe(encodeChannelModel("nycatai-video", "kling-3.0-720p"));
         expect(config.textModel).toBe(encodeChannelModel("nycatai-codex", "gpt-5.5"));
         expect(config.audioModel).toBe(defaultConfig.audioModel);
         expect(config.model).toBe(config.imageModel);

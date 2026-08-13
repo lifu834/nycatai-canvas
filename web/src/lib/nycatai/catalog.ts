@@ -45,7 +45,8 @@ export const NYCATAI_GROUPS: NycataiGroupDef[] = [
     {
         group: "video",
         channelName: "NYCATAI 视频",
-        defaultModel: "veo31-fast",
+        // 默认模型选已端到端实证出片的 kling（260813 veo 两渠道 #180/#193 上游 5xx，e2e 未过；恢复后可评估切回 veo31-fast）
+        defaultModel: "kling-3.0-720p",
         models: [
             { name: "veo31", capability: "video", price: { amount: 0.25, per: "second" }, provisional: true },
             { name: "veo31-fast", capability: "video", price: { amount: 0.14, per: "second" }, provisional: true },
