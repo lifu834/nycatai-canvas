@@ -136,12 +136,12 @@ describe("applyNycataiBootstrap · 渠道合并", () => {
         useConfigStore.setState((state) => ({
             config: {
                 ...state.config,
-                channels: state.config.channels.map((channel) => (channel.id === "nycatai-video" ? { ...channel, models: channel.models.map((model) => (model.name === "kling-v2v" ? { ...model, script: "return {url: 'x'}" } : model)) } : channel)),
+                channels: state.config.channels.map((channel) => (channel.id === "nycatai-video" ? { ...channel, models: channel.models.map((model) => (model.name === "kling-3.0-720p" ? { ...model, script: "return {url: 'x'}" } : model)) } : channel)),
             },
         }));
         setUrl("/#apiKey=sk-rotated");
         applyNycataiBootstrap();
-        const model = managedChannel("video")!.models.find((item) => item.name === "kling-v2v");
+        const model = managedChannel("video")!.models.find((item) => item.name === "kling-3.0-720p");
         expect(model!.script).toBe("return {url: 'x'}");
         expect(managedChannel("video")!.apiKey).toBe("sk-rotated");
     });

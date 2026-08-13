@@ -24,6 +24,9 @@ export type NycataiGroupDef = {
 export const DEFAULT_GATEWAY = "https://api.nycatai.com";
 export const NYCATAI_CHANNEL_PREFIX = "nycatai-";
 
+// 模型名于 260813 用真实 key 对网关 /{group}/v1/models 校准（scripts/canvas-cors-check.py --key）。
+// 策展原则：排除 ex- 兜底别名、-1k 死计费 key、leonardo-*/veo-3-1 重复别名（与无前缀canonical名同渠道能力）。
+// price 仍为预估（provisional），P3 成本透明前再对 billing 表转正。
 export const NYCATAI_GROUPS: NycataiGroupDef[] = [
     {
         group: "image",
@@ -31,7 +34,12 @@ export const NYCATAI_GROUPS: NycataiGroupDef[] = [
         defaultModel: "gpt-image-2",
         models: [
             { name: "gpt-image-2", capability: "image" },
-            { name: "nano-banana", capability: "image", price: { amount: 0.075, per: "image" } },
+            { name: "nano-banana-2", capability: "image", price: { amount: 0.075, per: "image" }, provisional: true },
+            { name: "nano-banana-2-2k", capability: "image", provisional: true },
+            { name: "nano-banana-2-4k", capability: "image", provisional: true },
+            { name: "nano-banana-pro", capability: "image", price: { amount: 0.12, per: "image" }, provisional: true },
+            { name: "nano-banana-pro-2k", capability: "image", provisional: true },
+            { name: "nano-banana-pro-4k", capability: "image", provisional: true },
         ],
     },
     {
@@ -42,16 +50,24 @@ export const NYCATAI_GROUPS: NycataiGroupDef[] = [
             { name: "veo31", capability: "video", price: { amount: 0.25, per: "second" }, provisional: true },
             { name: "veo31-fast", capability: "video", price: { amount: 0.14, per: "second" }, provisional: true },
             { name: "veo31-ref", capability: "video", provisional: true },
-            { name: "kling-v2v", capability: "video", price: { amount: 0.08, per: "second" }, provisional: true },
-            // TODO(P1): 从网关 /video/v1/models 拉取真实清单补齐 #193（veo/kling/seedance/minimax 系）与 #174 可售子集，
-            // 校准上面四条的价格档（禁止凭记忆猜模型名，以 usage_logs / 渠道配置为准）。
+            { name: "kling-3.0-720p", capability: "video", price: { amount: 0.08, per: "second" }, provisional: true },
+            { name: "kling-3.0-1080p", capability: "video", provisional: true },
+            { name: "seedance-2.0-720p", capability: "video", provisional: true },
+            { name: "seedance-2.0", capability: "video", provisional: true },
+            { name: "seedance-2.0-mini-720p", capability: "video", provisional: true },
+            { name: "minimax-h3-2k", capability: "video", provisional: true },
         ],
     },
     {
         group: "codex",
         channelName: "NYCATAI 对话",
         defaultModel: "gpt-5.5",
-        models: [{ name: "gpt-5.5", capability: "text" }],
+        models: [
+            { name: "gpt-5.5", capability: "text" },
+            { name: "gpt-5.4", capability: "text" },
+            { name: "gpt-5.4-mini", capability: "text" },
+            // 注意：gpt-5.6 系暂不入目录（计费倍率硬编码 bug 未部署修复，见 memory gpt56-completion-ratio-hardcode-lock）
+        ],
     },
     // audio 分组暂缺：确认 TTS 渠道后追加 { group: "audio", ... } 并在 bootstrap 里放开 audioModel 默认值。
 ];
