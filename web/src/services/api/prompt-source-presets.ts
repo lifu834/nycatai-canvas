@@ -24,6 +24,8 @@ export function createPromptSource(source?: Partial<PromptSource>): PromptSource
 }
 
 export const DEFAULT_PROMPT_SOURCES: PromptSource[] = [
+    // NYCATAI: 官方提示词源（三视图/九宫格/镜头语言/光影/电商/AI放大），同源静态文件零外部依赖
+    { id: "nycatai-official", name: "NYCATAI 官方", url: "/nycatai-prompts.json", homepage: "https://nycatai.com", enabled: true, builtIn: true },
     registrySource("banana-prompt-quicker", "Banana Prompt Quicker", "https://glidea.github.io/banana-prompt-quicker/"),
     registrySource("davidwu-gpt-image2-prompts", "DavidWu GPT Image 2", "https://github.com/davidwuw0811-boop/awesome-gpt-image2-prompts"),
     registrySource("freestylefly-gpt-image-2", "Freestylefly GPT Image 2", "https://github.com/freestylefly/awesome-gpt-image-2"),

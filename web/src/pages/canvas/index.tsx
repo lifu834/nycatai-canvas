@@ -8,6 +8,7 @@ import { readZip } from "@/lib/zip";
 import { setMediaBlob } from "@/services/file-storage";
 import { setImageBlob } from "@/services/image-storage";
 import { CanvasDeleteProjectsDialog } from "@/components/canvas/canvas-delete-projects-dialog";
+import { NycataiTemplateGallery } from "@/components/nycatai/template-gallery";
 import { CanvasProjectCard } from "@/components/canvas/canvas-project-card";
 import type { CanvasExportFile } from "@/types/canvas-export";
 import { useCanvasStore } from "@/stores/canvas/use-canvas-store";
@@ -93,6 +94,7 @@ export default function CanvasPage() {
                                 {t("canvas.deleteAll")}
                             </Button>
                         ) : null}
+                        <NycataiTemplateGallery disabled={!hydrated} />
                         <Button disabled={!hydrated} icon={<FileUp className="size-4" />} onClick={() => inputRef.current?.click()}>
                             {t("canvas.import")}
                         </Button>

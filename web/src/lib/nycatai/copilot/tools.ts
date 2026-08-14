@@ -5,6 +5,7 @@ import { summarizeCanvasAgentOps, type CanvasAgentOp, type CanvasAgentSnapshot }
 import type { AgentCanvasContext } from "@/stores/use-agent-store";
 
 import type { ResponsesToolDef } from "./client";
+import { prunePinnedNodes } from "./pins";
 
 // 云端画布编排助手的工具层：复用上游两套现成原语 ——
 // canvas ops（applyCanvasAgentOps，经 use-agent-bridge 发布在 agent store 的 canvasContext）
@@ -12,7 +13,7 @@ import type { ResponsesToolDef } from "./client";
 
 const OPS_DOC = [
     "op 类型:",
-    '- {"type":"add_node","id?":"自定义id","nodeType":"image|text|video|audio","title":"...","position":{"x":0,"y":0},"width?":320,"height?":240,"metadata?":{"prompt":"生成提示词"}}',
+    '- {"type":"add_node","id?":"自定义id","nodeType":"image|text|video|audio","title":"...","position":{"x":0,"y":0},"width?":320,"height?":240,"metadata?":{"prompt":"生成提示词","model?":"channelId::模型名(覆盖默认模型)","size?":"1024x1024","seconds?":"6"}}',
     '- {"type":"update_node","id":"nodeId","patch?":{"title":"..."},"metadata?":{"prompt":"..."}}',
     '- {"type":"connect_nodes","fromNodeId":"a","toNodeId":"b"} （连线=下游生成时引用上游内容/图片）',
     '- {"type":"delete_node","id?":"nodeId","ids?":["..."]} / {"type":"delete_connections","ids":["..."]}',
@@ -66,14 +67,16 @@ export function pickDestructiveOps(ops: CanvasAgentOp[]): CanvasAgentOp[] {
     return ops.filter((op) => DESTRUCTIVE_OP_TYPES.has(op.type));
 }
 
-/** 压缩快照给 LLM（控制 token；导出以便单测） */
-export function compactSnapshot(snapshot: CanvasAgentSnapshot) {
+/** 压缩快照给 LLM（控制 token；导出以便单测）。pinnedIds = 用户钉住的角色/风格锚点 */
+export function compactSnapshot(snapshot: CanvasAgentSnapshot, pinnedIds: string[] = []) {
+    const pinned = new Set(pinnedIds);
     const clip = (value: unknown, max: number) => {
         const text = typeof value === "string" ? value.trim() : "";
         return text ? `${text.slice(0, max)}${text.length > max ? "…" : ""}` : undefined;
     };
     const nodes = snapshot.nodes.slice(0, 120).map((node) => ({
         id: node.id,
+        pinned: pinned.has(node.id) || undefined,
         type: node.type,
         title: clip(node.title, 40),
         x: Math.round(node.position.x),
@@ -112,7 +115,10 @@ export async function runCopilotTool(name: string, argsJson: string, deps: Copil
         return JSON.stringify({ error: "arguments 不是合法 JSON" });
     }
     try {
-        if (name === "canvas_get_state") return JSON.stringify(compactSnapshot(deps.context.snapshot));
+        if (name === "canvas_get_state") {
+            const pinnedIds = prunePinnedNodes(deps.context.snapshot.projectId, new Set(deps.context.snapshot.nodes.map((node) => node.id)));
+            return JSON.stringify(compactSnapshot(deps.context.snapshot, pinnedIds));
+        }
         if (name === "canvas_apply_ops") {
             const ops = (Array.isArray(args.ops) ? args.ops : []).filter((op): op is CanvasAgentOp => Boolean(op && typeof op === "object" && (op as CanvasAgentOp).type));
             if (!ops.length) return JSON.stringify({ error: "ops 为空" });

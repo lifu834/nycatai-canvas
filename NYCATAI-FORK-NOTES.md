@@ -18,6 +18,8 @@
 | `web/src/main.tsx` | 引入 `nycatai-theme.css`（必须在 globals.css 之后）+ 字体栈改主站同款 | 上游改字体行时保留我方 |
 | `web/src/lib/app-theme.ts` | 点缀式换肤：colorPrimary/colorLink/选中态 → 陶土橙，中性色不动 | 上游重构主题结构时重新挂 |
 | `web/src/components/layout/app-providers.tsx` | ProConfigProvider 换到外层（其 dark 预设会派生覆盖 colorPrimary） | 上游改 provider 链时重点回归 |
+| `web/src/pages/canvas/index.tsx` | 头部插 `<NycataiTemplateGallery/>`（1 行 + import） | 上游改列表页头部时重新挂 |
+| `web/src/services/api/prompt-source-presets.ts` | DEFAULT_PROMPT_SOURCES 头部加 nycatai-official 内置源（同源 /nycatai-prompts.json） | 冲突时保留我方一行 |
 
 ## nycatai 专属文件（无冲突面）
 

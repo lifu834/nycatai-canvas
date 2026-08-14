@@ -2,10 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button, Input, Tooltip } from "antd";
-import { CircleStop, RotateCcw, Send, Sparkles, Trash2, Wand2, X } from "lucide-react";
+import { CircleStop, Pin, RotateCcw, Send, Sparkles, Trash2, Wand2, X } from "lucide-react";
 
 import type { ResponsesInputItem } from "@/lib/nycatai/copilot/client";
 import { resolveCopilotCredential, runCopilotTurn } from "@/lib/nycatai/copilot/loop";
+import { getPinnedNodeIds, togglePinnedNodes } from "@/lib/nycatai/copilot/pins";
 import type { CanvasAgentOp } from "@/lib/canvas/canvas-agent-ops";
 import { summarizeCanvasAgentOps } from "@/lib/canvas/canvas-agent-ops";
 import { useAgentStore } from "@/stores/use-agent-store";
@@ -30,8 +31,15 @@ export function NycataiCopilot() {
     const [running, setRunning] = useState(false);
     const [streaming, setStreaming] = useState("");
     const [confirm, setConfirm] = useState<PendingConfirm | null>(null);
+    const [pinnedCount, setPinnedCount] = useState(() => (canvasContext ? getPinnedNodeIds(canvasContext.snapshot.projectId).length : 0));
     const abortRef = useRef<AbortController | null>(null);
     const listRef = useRef<HTMLDivElement>(null);
+
+    const selectedIds = canvasContext?.snapshot.selectedNodeIds || [];
+    const togglePin = () => {
+        if (!canvasContext || !selectedIds.length) return;
+        setPinnedCount(togglePinnedNodes(canvasContext.snapshot.projectId, selectedIds).length);
+    };
 
     useEffect(() => {
         listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
@@ -104,6 +112,11 @@ export function NycataiCopilot() {
                     {t("nycatai.copilot.title")}
                 </div>
                 <div className="flex items-center gap-1">
+                    <Tooltip title={selectedIds.length ? t("nycatai.copilot.pinSelected", { count: selectedIds.length }) : t("nycatai.copilot.pinHint")}>
+                        <Button type="text" size="small" disabled={!selectedIds.length} onClick={togglePin} icon={<Pin className={`size-4 ${pinnedCount ? "text-[#c4704b]" : ""}`} />}>
+                            {pinnedCount ? <span className="text-xs text-[#c4704b]">{pinnedCount}</span> : null}
+                        </Button>
+                    </Tooltip>
                     {canvasContext.canUndo ? (
                         <Tooltip title={t("nycatai.copilot.undo")}>
                             <Button type="text" size="small" icon={<RotateCcw className="size-4" />} onClick={() => canvasContext.undoOps()} />
