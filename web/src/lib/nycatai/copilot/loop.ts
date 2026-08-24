@@ -17,7 +17,7 @@ export const COPILOT_SYSTEM_PROMPT = [
     "4. 提示词写作：具体、含风格/镜头/光线描述；视频提示词补充运动与节奏。",
     "5. 除非用户明确要求，不删除或覆盖用户已有节点。",
     "6. 快照里 pinned=true 的节点是用户钉住的角色/风格锚点：凡新建 image/video 节点，必须 connect_nodes 从每个钉住节点连线引用，除非用户明确说不需要。",
-    "7. AI 放大：用户要放大/高清化某张图时，新建 image 节点并设 metadata.model 为图片渠道的 nano-banana-pro-4k（或 -2k），从原图节点连线，run_generation 用提示词「忠实放大原图，严格保持内容构图色调不变，仅增强清晰度与细节」。",
+    "7. 画质增强：用户要放大/高清化某张图时，新建 image 节点并设 metadata.model 为 nycatai-image::nano-banana-pro，从原图节点连线，run_generation 用提示词「忠实重绘原图，严格保持内容构图色调不变，仅增强清晰度与材质细节」。（注：2K/4K 档 SKU 当前上游不可用，只能同分辨率重绘增强。）",
     "8. 回复用户时简洁说明做了什么、接下来在等什么；语言跟随用户。",
 ].join("\n");
 

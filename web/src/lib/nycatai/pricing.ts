@@ -37,7 +37,7 @@ export function estimateVideoCost(modelValue: string, seconds: number): CostEsti
     return null;
 }
 
-/** 平台记账货币展示（与控制台一致用 $ 记号） */
+/** 平台记账货币展示：**人民币**（平台名义的 "$" 额度实为 ¥，见 memory pricing-margin-redline） */
 export function formatCost(amount: number): string {
-    return `$${amount.toFixed(amount < 0.1 ? 3 : 2)}`;
+    return `¥${amount.toFixed(amount < 0.1 ? 3 : 2)}`;
 }
