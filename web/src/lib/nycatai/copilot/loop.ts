@@ -17,8 +17,9 @@ export const COPILOT_SYSTEM_PROMPT = [
     "4. 提示词写作：具体、含风格/镜头/光线描述；视频提示词补充运动与节奏。",
     "5. 除非用户明确要求，不删除或覆盖用户已有节点。",
     "6. 快照里 pinned=true 的节点是用户钉住的角色/风格锚点：凡新建 image/video 节点，必须 connect_nodes 从每个钉住节点连线引用，除非用户明确说不需要。",
-    "7. 画质增强：用户要放大/高清化某张图时，新建 image 节点并设 metadata.model 为 nycatai-image::nano-banana-pro，从原图节点连线，run_generation 用提示词「忠实重绘原图，严格保持内容构图色调不变，仅增强清晰度与材质细节」。（注：2K/4K 档 SKU 当前上游不可用，只能同分辨率重绘增强。）",
-    "8. 回复用户时简洁说明做了什么、接下来在等什么；语言跟随用户。",
+    "7. AI 放大：用户要放大/高清化某张图时，新建 image 节点、设 metadata.model 为 nycatai-image::nano-banana-pro-4k（真 4096²）与 metadata.size 为 3840x2160，从原图节点连线，run_generation 用提示词「忠实放大原图，严格保持内容构图色调不变，仅增强清晰度与材质细节」。",
+    "8. 视频模型选择与能力：默认 kling-3.0（¥0.08/秒，最稳）；veo-3.1/-fast 时长只能是 4/6/8 秒；sd-2.0 系 4–15 秒；**sd-2.5 系（sd-2.5-480p/sd-2.5/sd-2.5-1080p）支持 4–30 秒、锁脸（lock_face + 参考图）、参考视频、首尾帧**，需要人物一致或长片时选它。seconds 必须是字符串。视频出片要 3–7 分钟（30 秒片 5–10 分钟），轮询时耐心等待。",
+    "9. 回复用户时简洁说明做了什么、接下来在等什么；语言跟随用户。",
 ].join("\n");
 
 export type CopilotTurnCallbacks = {

@@ -32,10 +32,11 @@ beforeEach(() => {
 });
 
 describe("applyNycataiBootstrap · 参数解析", () => {
-    it("无参数时返回 false 且不动 store", () => {
+    it("无参数时返回 false，但仍把渠道表规整为受管渠道（只接 nycatai）", () => {
         expect(applyNycataiBootstrap()).toBe(false);
-        expect(channels()).toHaveLength(1);
-        expect(channels()[0].id).toBe("default");
+        expect(channels()).toHaveLength(NYCATAI_GROUPS.length);
+        expect(channels().every((channel) => channel.id.startsWith("nycatai-"))).toBe(true);
+        expect(channels().find((channel) => channel.id === "default")).toBeUndefined();
     });
 
     it("hash 注入：建三个受管渠道并抹掉 hash", () => {
@@ -77,13 +78,13 @@ describe("applyNycataiBootstrap · 参数解析", () => {
         expect(managedChannel("codex")!.apiKey).toBe("sk-query");
     });
 
-    it("query 带 baseUrl 时让给上游导入逻辑（不劫持）", () => {
-        setUrl("/?baseUrl=https://example.com/v1&apiKey=sk-upstream");
-        expect(applyNycataiBootstrap()).toBe(false);
-        expect(managedChannel("image")).toBeUndefined();
-        // 参数原样保留给上游 handler
-        expect(window.location.search).toContain("baseUrl=");
-        expect(window.location.search).toContain("apiKey=");
+    it("外部 baseUrl 一律忽略：只接 nycatai，且参数被抹掉", () => {
+        setUrl("/?baseUrl=https://example.com/v1&apiKey=sk-external");
+        expect(applyNycataiBootstrap()).toBe(true);
+        // 密钥仍然接受（是 nycatai 的 key），但外部 baseUrl 绝不采用
+        expect(managedChannel("image")!.baseUrl).toBe(`${DEFAULT_GATEWAY}/image`);
+        expect(window.location.search).not.toContain("baseUrl=");
+        expect(window.location.search).not.toContain("apiKey=");
     });
 
     it("hash 里我方参数之外的内容保留", () => {
@@ -101,7 +102,7 @@ describe("applyNycataiBootstrap · 渠道合并", () => {
         expect(config.imageModel).toBe(encodeChannelModel("nycatai-image", "nano-banana-2"));
         expect(config.videoModel).toBe(encodeChannelModel("nycatai-overseas", "kling-3.0"));
         expect(config.textModel).toBe(encodeChannelModel("nycatai-codex", "gpt-5.5"));
-        expect(config.audioModel).toBe(defaultConfig.audioModel);
+        expect(config.audioModel).toBe(""); // audio 分组未接入，回落为空而非外部模型
         expect(config.model).toBe(config.imageModel);
     });
 
@@ -112,10 +113,10 @@ describe("applyNycataiBootstrap · 渠道合并", () => {
         applyNycataiBootstrap();
         expect(channels().filter((channel) => channel.id.startsWith("nycatai-"))).toHaveLength(NYCATAI_GROUPS.length);
         expect(managedChannel("image")!.apiKey).toBe("sk-new");
-        expect(channels().find((channel) => channel.id === "default")!.apiKey).toBe("");
+        expect(channels().find((channel) => channel.id === "default")).toBeUndefined();
     });
 
-    it("用户自建渠道原样保留", () => {
+    it("用户自建/外部渠道会被移除（本站只接 nycatai）", () => {
         useConfigStore.setState((state) => ({
             config: {
                 ...state.config,
@@ -124,10 +125,8 @@ describe("applyNycataiBootstrap · 渠道合并", () => {
         }));
         setUrl("/#apiKey=sk-x");
         applyNycataiBootstrap();
-        const mine = channels().find((channel) => channel.id === "mine");
-        expect(mine).toBeDefined();
-        expect(mine!.apiKey).toBe("sk-mine");
-        expect(mine!.baseUrl).toBe("https://my.example.com");
+        expect(channels().find((channel) => channel.id === "mine")).toBeUndefined();
+        expect(channels()).toHaveLength(NYCATAI_GROUPS.length);
     });
 
     it("受管渠道上用户配置的 per-model 脚本在重注入后保留", () => {
@@ -153,5 +152,15 @@ describe("applyNycataiBootstrap · 渠道合并", () => {
         applyNycataiBootstrap();
         const options = useConfigStore.getState().config.models;
         expect(new Set(options).size).toBe(options.length);
+    });
+});
+
+describe("只接 nycatai：外部参数清理", () => {
+    it("hash 里的 baseUrl 也会被抹掉", () => {
+        setUrl("/#apiKey=sk-x&baseUrl=https://evil.example.com");
+        applyNycataiBootstrap();
+        expect(window.location.hash).not.toContain("baseUrl");
+        expect(window.location.hash).not.toContain("evil.example.com");
+        expect(managedChannel("image")!.baseUrl).toBe(`${DEFAULT_GATEWAY}/image`);
     });
 });

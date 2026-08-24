@@ -26,6 +26,11 @@ export default {
             pinSelected: "Pin/unpin {{count}} selected node(s) as character/style anchors",
             pinHint: "Select nodes on the canvas first, then pin them as anchors",
         },
+        channels: {
+            ready: "This site only connects to NYCATAI's own endpoints and models. Channels and keys are provisioned by the platform.",
+            needKey: "No API key yet: open Infinite Canvas from the NYCATAI console to get set up automatically.",
+            locked: "Platform-managed channel (read-only)",
+        },
         templates: {
             entry: "Templates",
             title: "NYCATAI Template Gallery",

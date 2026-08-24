@@ -26,6 +26,11 @@ export default {
             pinSelected: "钉住/取消钉住所选 {{count}} 个节点（角色/风格锚点，编排时自动引用）",
             pinHint: "先在画布上选中节点，再钉为角色/风格锚点",
         },
+        channels: {
+            ready: "本站只接入 NYCATAI 自有接口与模型，渠道与密钥由平台统一下发，无需手工配置。",
+            needKey: "尚未注入密钥：请从 NYCATAI 主站「无限画布」入口一键进入，即可自动完成配置。",
+            locked: "平台受管渠道，不可修改",
+        },
         templates: {
             entry: "模板",
             title: "NYCATAI 模板画廊",

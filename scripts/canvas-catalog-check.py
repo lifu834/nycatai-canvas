@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """canvas-catalog-check.py — 体检 catalog.ts 与后端真实状态是否一致（防止模型漂移导致"点了必失败"）。
 
+🔑 /v1/models **不是**可路由性的真相：实测 nano-banana-pro-2k/-4k 不在 /image/v1/models 里
+   却能正常路由。真判据 = 下单探测：发一个必然被上游拒绝的空 prompt 请求，
+   返回 model_not_found ⇒ 不可路由；返回其它任何错误 ⇒ 已路由到上游 ⇒ 可路由。
+
 后端会漂移：260813→260824 就有 7 个视频模型改名/下架、image 的 2K/4K 六 SKU 全部不可路由。
 每次合并上游、例行体检、或用户报"生成失败"时跑一遍。
 
@@ -26,6 +30,25 @@ def http_json(url, key):
     req = urllib.request.Request(url, headers={"Authorization": f"Bearer {key}", "User-Agent": "catalog-check/1.0"})
     with urllib.request.urlopen(req, timeout=60) as r:
         return json.loads(r.read())
+
+
+def probe_routable(group, model, key, timeout=90):
+    """下单探测可路由性：model_not_found ⇒ 不可路由；其它错误 ⇒ 已到上游 ⇒ 可路由。
+    返回 True/False/None(网络异常，判不了)。"""
+    body = json.dumps({"model": model, "prompt": ""}).encode()
+    req = urllib.request.Request(
+        f"{GATEWAY}/{group}/v1/images/generations" if group in ("image",) else f"{GATEWAY}/{group}/v1/videos",
+        method="POST", data=body,
+        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json", "User-Agent": "catalog-check/1.0"})
+    try:
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                raw = r.read()
+        except urllib.error.HTTPError as e:
+            raw = e.read()
+        return b"model_not_found" not in raw and b"No available channel" not in raw
+    except Exception:
+        return None
 
 
 def parse_catalog(path):
@@ -66,15 +89,26 @@ def main():
             failures.append(group)
             continue
 
-        dead = [m for m in spec["models"] if m not in routable]
+        # /v1/models 未列出的模型，用下单探测复核（它不是可路由性的真相）
+        unlisted = [m for m in spec["models"] if m not in routable]
+        dead, unknown = [], []
+        for m in unlisted:
+            verdict = probe_routable(group, m, a.key)
+            if verdict is False:
+                dead.append(m)
+            elif verdict is None:
+                unknown.append(m)
         if dead:
             print(f"FAIL  [{group}] catalog 有但已不可路由: {', '.join(dead)}")
             failures.extend(dead)
-        else:
-            print(f"PASS  [{group}] {len(spec['models'])} 个模型全部可路由")
+        if unknown:
+            print(f"WARN  [{group}] 探测超时判不了（网络问题，非模型问题）: {', '.join(unknown)}")
+        confirmed = len(spec["models"]) - len(dead) - len(unknown)
+        print(f"{'PASS' if not dead else 'FAIL'}  [{group}] {confirmed}/{len(spec['models'])} 个模型确认可路由"
+              + (f"（其中 {len(unlisted) - len(dead) - len(unknown)} 个靠下单探测确认，未在 /v1/models 列出）" if unlisted else ""))
 
         if spec["default"]:
-            ok = spec["default"] in routable
+            ok = spec["default"] in routable or probe_routable(group, spec["default"], a.key) is True
             print(f"{'PASS' if ok else 'FAIL'}  [{group}] 默认模型 {spec['default']} {'可用' if ok else '🔴已失效——用户点生成必失败'}")
             if not ok:
                 failures.append(f"{group}:default")
