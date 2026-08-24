@@ -38,7 +38,9 @@
 
 ## 部署约定
 
-- CF Pages 项目 `nycatai-canvas` → canvas.nycatai.com；浏览器直连灰云网关，**绝不走 Pages 同源代理**（CF 100s → 524，studio2 教训）。
+- ✅已上线 https://canvas.nycatai.com（CF Pages 项目 `nycatai-canvas`；DNS: CNAME canvas → nycatai-canvas.pages.dev, proxied=true，与 studio 同款）。
+- 部署命令：`cd web && bun node_modules/vite/bin/vite.js build && bunx wrangler pages deploy dist --project-name nycatai-canvas --branch main --commit-dirty=true`（wrangler 无 `pages domain` 子命令，自定义域用 CF API 加，见 configs/.cf-pages.env 与 .cf-lb.env）。
+- 浏览器直连灰云网关，**绝不走 Pages 同源代理**（CF 100s → 524，studio2 教训）。
 - 生产构建不设 `VITE_ALLOW_PLUGIN_URL_INSTALL`。
 - 上游许可 MIT；页面保留 infinite-canvas 署名，改品牌前已知会原作者（1844025705@qq.com）。
 
