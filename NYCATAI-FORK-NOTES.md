@@ -6,7 +6,6 @@
 
 | 文件 | 改动 | 合并时注意 |
 |---|---|---|
-| `web/src/components/layout/client-root-init.tsx` | useEffect 里前置调用 `applyNycataiBootstrap()`，命中即跳过上游单渠道导入 | 上游若重构 URL 参数逻辑，重点回归 |
 | `web/src/hooks/use-version-check.ts` | VERSION/CHANGELOG 两个 raw URL 指向 lifu834/nycatai-canvas | 上游改 URL 结构时同步 |
 | `web/index.html` | title / meta description 品牌化 | 直接保留我方版本 |
 | `web/src/i18n/locales/zh-CN.ts`、`en-US.ts` | 仅 `meta.title` / `meta.description` | 冲突时保留我方两行，其余全取上游 |
@@ -25,8 +24,8 @@
 
 ## nycatai 专属文件（无冲突面）
 
-- `web/src/lib/nycatai/catalog.ts` — 三分组模型目录 + 价格元数据；video 列表 provisional，P1 用真实 key 校准。
-- `web/src/lib/nycatai/bootstrap.ts` — hash/query 注入 → 三个 `nycatai-` 受管渠道；只动受管渠道，保留用户自建渠道与 per-model 脚本。**规则：query 里出现 `baseUrl` 时让给上游导入逻辑，不劫持。**
+- `web/src/lib/nycatai/catalog.ts` — 四分组模型目录（image/overseas/video/codex）+ 真实单价 + 冗余条数；按 nycatai-ops 校准包维护。
+- `web/src/lib/nycatai/bootstrap.ts` — 启动时无条件规整为 4 个 `nycatai-` 受管渠道并移除外部渠道；保留 per-model 脚本与已注入 key；失效模型自动回落默认。
 - `web/src/lib/nycatai/bootstrap.test.ts` + `web/vitest.config.ts` — 单测（`bun run test` / `node node_modules/vitest/vitest.mjs run`）；合并上游后必跑。
 
 ## 只接 NYCATAI（260824 定稿）
