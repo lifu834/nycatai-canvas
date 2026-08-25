@@ -19,7 +19,7 @@ export function NycataiCostHint({ capability, model, count, seconds }: { capabil
             <Coins className="size-3.5" />
             <span>
                 {t("nycatai.estCost")} ≈ {formatCost(estimate.amount)}
-                {estimate.provisional ? t("nycatai.estMark") : ""}
+                {estimate.fragile ? t("nycatai.fragileMark") : ""}
             </span>
         </div>
     );

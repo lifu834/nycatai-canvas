@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Tag, Tooltip } from "antd";
 import { Layers, Lock, ShieldCheck } from "lucide-react";
 
-import { NYCATAI_GROUPS, NYCATAI_CHANNEL_PREFIX } from "@/lib/nycatai/catalog";
+import { NYCATAI_GROUPS, NYCATAI_CHANNEL_PREFIX, nycataiModelLabel } from "@/lib/nycatai/catalog";
 import { formatCost } from "@/lib/nycatai/pricing";
 import type { ModelChannel } from "@/stores/use-config-store";
 
@@ -49,10 +49,11 @@ export function NycataiChannelsPanel({ channels }: { channels: ModelChannel[] })
                             {def.models.map((model) => {
                                 const price = priceLabel(model.price);
                                 return (
-                                    <Tooltip key={model.name} title={model.note || undefined}>
+                                    <Tooltip key={model.name} title={[model.note, `SKU: ${model.name}`, model.redundancy ? `${model.redundancy} 条线路` : ""].filter(Boolean).join(" · ")}>
                                         <Tag className="!mr-0 !border-stone-200 !bg-transparent !text-xs dark:!border-stone-700">
-                                            <span className="font-medium">{model.name}</span>
+                                            <span className="font-medium">{nycataiModelLabel(model.name)}</span>
                                             {price ? <span className="ml-1.5 text-stone-400">{price}</span> : null}
+                                            {model.fragile ? <span className="ml-1 text-amber-500" title="供给单点">⚠</span> : null}
                                         </Tag>
                                     </Tooltip>
                                 );

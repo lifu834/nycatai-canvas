@@ -5,7 +5,7 @@ export default {
     },
     nycatai: {
         estCost: "预估费用",
-        estMark: "（估）",
+        fragileMark: "（线路较少）",
         usage: "已消耗",
         usageError: "消耗查询失败",
         usageTitle: "该密钥累计消耗，点击刷新",

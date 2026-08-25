@@ -16,7 +16,7 @@ describe("nycatai pricing", () => {
         const estimate = estimateImageCost("nycatai-image::nano-banana-2", 3);
         expect(estimate).not.toBeNull();
         expect(estimate!.amount).toBeCloseTo(0.08 * 3);
-        expect(estimate!.provisional).toBe(false);
+        expect(estimate!.fragile).toBe(false);
     });
 
     it("按秒计价 × 时长，非法数量兜底为 1", () => {

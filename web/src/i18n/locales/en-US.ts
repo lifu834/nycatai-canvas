@@ -5,7 +5,7 @@ export default {
     },
     nycatai: {
         estCost: "Est. cost",
-        estMark: " (approx.)",
+        fragileMark: " (limited supply)",
         usage: "Spent",
         usageError: "Usage unavailable",
         usageTitle: "Total spend on this key, click to refresh",

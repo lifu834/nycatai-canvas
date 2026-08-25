@@ -4,6 +4,7 @@ import { persist } from "zustand/middleware";
 import { nanoid } from "nanoid";
 
 import i18n from "@/i18n";
+import { NYCATAI_CHANNEL_PREFIX, nycataiModelLabel } from "@/lib/nycatai/catalog";
 
 export type ApiCallFormat = "openai" | "gemini" | "ark";
 export type ModelCapability = "image" | "video" | "text" | "audio";
@@ -307,6 +308,9 @@ export function modelOptionName(value: string) {
 export function modelOptionLabel(config: AiConfig, value: string) {
     const decoded = decodeChannelModel(value);
     if (!decoded) return value;
+    // NYCATAI: 受管渠道用友好展示名（"Nano Banana 2 · 4K"），且不再拼渠道名后缀——
+    // 全站只有 nycatai 渠道，"（NYCATAI 生图）"这类后缀纯属冗余。
+    if (decoded.channelId.startsWith(NYCATAI_CHANNEL_PREFIX)) return nycataiModelLabel(decoded.model);
     const channel = config.channels.find((item) => item.id === decoded.channelId);
     return channel ? `${decoded.model}（${channel.name}）` : decoded.model;
 }

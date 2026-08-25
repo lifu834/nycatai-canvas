@@ -7,8 +7,8 @@ import { NYCATAI_CHANNEL_PREFIX, NYCATAI_GROUPS, type NycataiModelDef } from "./
 
 export type CostEstimate = {
     amount: number;
-    /** 价格元数据尚未对账单校准 */
-    provisional: boolean;
+    /** 供给单点的模型（sd-2.5 系）：UI 可据此提示"线路较少" */
+    fragile: boolean;
 };
 
 export function findNycataiModel(modelValue: string): NycataiModelDef | null {
@@ -23,7 +23,7 @@ export function estimateImageCost(modelValue: string, count: number): CostEstima
     const model = findNycataiModel(modelValue);
     if (!model?.price || model.price.per !== "image") return null;
     const n = Math.max(1, Math.floor(count) || 1);
-    return { amount: model.price.amount * n, provisional: Boolean(model.provisional) };
+    return { amount: model.price.amount * n, fragile: Boolean(model.fragile) };
 }
 
 export function estimateVideoCost(modelValue: string, seconds: number): CostEstimate | null {
@@ -31,9 +31,9 @@ export function estimateVideoCost(modelValue: string, seconds: number): CostEsti
     if (!model?.price) return null;
     if (model.price.per === "second") {
         const s = Math.max(1, Math.floor(seconds) || 1);
-        return { amount: model.price.amount * s, provisional: Boolean(model.provisional) };
+        return { amount: model.price.amount * s, fragile: Boolean(model.fragile) };
     }
-    if (model.price.per === "call") return { amount: model.price.amount, provisional: Boolean(model.provisional) };
+    if (model.price.per === "call") return { amount: model.price.amount, fragile: Boolean(model.fragile) };
     return null;
 }
 
