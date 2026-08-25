@@ -1,6 +1,6 @@
 import { decodeChannelModel } from "@/stores/use-config-store";
 
-import { NYCATAI_CHANNEL_PREFIX, NYCATAI_GROUPS, type NycataiModelDef } from "./catalog";
+import { findNycataiModelDef, NYCATAI_CHANNEL_PREFIX, NYCATAI_GROUPS, type NycataiModelDef } from "./catalog";
 
 // 成本透明（P3）：从 catalog 的价格元数据算「生成前预估费用」。
 // 只对 nycatai- 受管渠道生效；无价格数据的模型返回 null（UI 不显示，宁缺毋滥）。
@@ -40,4 +40,26 @@ export function estimateVideoCost(modelValue: string, seconds: number): CostEsti
 /** 平台记账货币展示：**人民币**（平台名义的 "$" 额度实为 ¥，见 memory pricing-margin-redline） */
 export function formatCost(amount: number): string {
     return `¥${amount.toFixed(amount < 0.1 ? 3 : 2)}`;
+}
+
+/** 下拉/标签用的单价文案："¥0.08/张" / "¥0.08/秒" / "¥2.85/次"；无常量单价返回 null */
+export function unitPriceLabel(sku: string): string | null {
+    const model = findNycataiModelDef(sku);
+    if (!model?.price) return null;
+    const unit = model.price.per === "second" ? "/秒" : model.price.per === "call" ? "/次" : "/张";
+    return `${formatCost(model.price.amount)}${unit}`;
+}
+
+/** 计费规则一句话（含时长/档位限制等），供下拉副标题展示 */
+export function billingRuleLabel(sku: string): string | null {
+    const model = findNycataiModelDef(sku);
+    if (!model) return null;
+    const parts: string[] = [];
+    if (model.price?.per === "second") parts.push("按秒计费");
+    else if (model.price?.per === "call") parts.push("一口价");
+    else if (model.price?.per === "image") parts.push("按张计费");
+    else parts.push("按 token 计费");
+    if (model.note) parts.push(model.note);
+    if (model.fragile) parts.push("⚠ 线路少，故障时改用 Seedance 2.0");
+    return parts.join(" · ");
 }

@@ -18,6 +18,7 @@
 | `web/src/lib/app-theme.ts` | 点缀式换肤：colorPrimary/colorLink/选中态 → 陶土橙，中性色不动 | 上游重构主题结构时重新挂 |
 | `web/src/components/layout/app-providers.tsx` | ProConfigProvider 换到外层（其 dark 预设会派生覆盖 colorPrimary） | 上游改 provider 链时重点回归 |
 | `web/src/pages/canvas/index.tsx` | 头部插 `<NycataiTemplateGallery/>`（1 行 + import） | 上游改列表页头部时重新挂 |
+| `web/src/components/model-picker.tsx` | 下拉选项 `ModelLabel` 加单价（右对齐陶土橙）+ 计费规则副标题；触发按钮保持简洁 | 上游改选项渲染时重新挂 |
 | `web/src/stores/use-config-store.ts` | `modelOptionLabel` 对受管渠道返回友好名（"Nano Banana 2 · 4K"）且不拼渠道后缀 | 上游改标签函数时重新挂 |
 | `web/src/services/api/prompt-source-presets.ts` | DEFAULT_PROMPT_SOURCES 头部加 nycatai-official 内置源（同源 /nycatai-prompts.json） | 冲突时保留我方一行 |
 | `web/src/components/layout/app-config-modal.tsx` | 渠道 tab 整体替换为只读 `<NycataiChannelsPanel/>`（本站只接 nycatai，无自建渠道） | 上游改配置弹窗结构时重新挂 |

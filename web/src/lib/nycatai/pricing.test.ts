@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { estimateImageCost, estimateVideoCost, findNycataiModel, formatCost } from "./pricing";
+import { billingRuleLabel, estimateImageCost, estimateVideoCost, findNycataiModel, formatCost, unitPriceLabel } from "./pricing";
 
 describe("nycatai pricing", () => {
     it("非受管渠道模型返回 null", () => {
@@ -32,5 +32,21 @@ describe("nycatai pricing", () => {
     it("formatCost 小额三位小数，常规两位", () => {
         expect(formatCost(0.075)).toBe("¥0.075");
         expect(formatCost(0.48)).toBe("¥0.48");
+    });
+
+    it("单价文案按计费单位区分张/秒/次", () => {
+        expect(unitPriceLabel("nano-banana-2")).toBe("¥0.080/张");
+        expect(unitPriceLabel("kling-3.0")).toBe("¥0.080/秒");
+        expect(unitPriceLabel("seedance-2.0")).toBe("¥2.85/次");
+        expect(unitPriceLabel("gpt-image-2-1k")).toBe("¥0.020/张");
+        expect(unitPriceLabel("gpt-5.5")).toBeNull(); // 按 token 无常量单价
+    });
+
+    it("计费规则含单位说明、限制与线路风险", () => {
+        expect(billingRuleLabel("kling-3.0")).toContain("按秒计费");
+        expect(billingRuleLabel("seedance-2.0")).toContain("一口价");
+        expect(billingRuleLabel("veo-3.1")).toContain("4/6/8 秒");
+        expect(billingRuleLabel("sd-2.5-720p")).toContain("线路少");
+        expect(billingRuleLabel("gpt-5.5")).toContain("token");
     });
 });

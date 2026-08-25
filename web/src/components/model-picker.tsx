@@ -6,6 +6,7 @@ import i18n from "@/i18n";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { modelOptionLabel, modelOptionName, selectableModelsByCapability, type AiConfig, type ModelCapability } from "@/stores/use-config-store";
+import { billingRuleLabel, unitPriceLabel } from "@/lib/nycatai/pricing";
 
 type ModelPickerProps = {
     config: AiConfig;
@@ -72,7 +73,7 @@ export function ModelPicker({ config, value, onChange, capability, className, fu
                 {options.length ? (
                     options.map((model) => (
                         <SelectItem key={model} value={model} textValue={modelOptionLabel(config, model)}>
-                            <ModelLabel config={config} model={model} />
+                            <ModelLabel config={config} model={model} detailed />
                         </SelectItem>
                     ))
                 ) : (
@@ -91,11 +92,18 @@ function emptyModelLabel(config: AiConfig, capability?: ModelCapability) {
     return config.models.length ? i18n.t("settingsPanels.model.noMatch", { capability: label }) : i18n.t("settingsPanels.model.addFirst");
 }
 
-function ModelLabel({ config, model }: { config: AiConfig; model: string }) {
+function ModelLabel({ config, model, detailed = false }: { config: AiConfig; model: string; detailed?: boolean }) {
+    const sku = modelOptionName(model);
+    const price = unitPriceLabel(sku);
+    const rule = detailed ? billingRuleLabel(sku) : null;
     return (
-        <span className="flex min-w-0 items-center gap-2">
-            <ModelIcon model={model} />
-            <span className="truncate">{modelOptionLabel(config, model)}</span>
+        <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="flex min-w-0 items-center gap-2">
+                <ModelIcon model={model} />
+                <span className="truncate">{modelOptionLabel(config, model)}</span>
+                {price ? <span className="ml-auto shrink-0 pl-3 text-xs tabular-nums text-[#c4704b]">{price}</span> : null}
+            </span>
+            {rule ? <span className="truncate pl-6 text-[11px] leading-4 text-stone-400 dark:text-stone-500">{rule}</span> : null}
         </span>
     );
 }

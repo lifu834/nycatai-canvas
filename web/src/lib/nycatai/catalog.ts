@@ -78,9 +78,9 @@ export const NYCATAI_GROUPS: NycataiGroupDef[] = [
             { name: "sd-2.0-4k", label: "Seedance 2.0", tier: "4K", capability: "video", price: { amount: 6.2, per: "second" }, redundancy: 3 },
             { name: "sd-fast-720p", label: "Seedance 2.0 Fast", tier: "720p", capability: "video", price: { amount: 0.64, per: "second" }, redundancy: 4 },
             { name: "sd-mini-720p", label: "Seedance 2.0 Mini", tier: "720p", capability: "video", price: { amount: 0.48, per: "second" }, redundancy: 3 },
-            { name: "sd-2.5-480p", label: "Seedance 2.5", tier: "480p", capability: "video", price: { amount: 0.38, per: "second" }, redundancy: 1, fragile: true, note: "功能最强（锁脸/参考视频/4–30 秒），但供给单点，失败请改用 Seedance 2.0" },
-            { name: "sd-2.5-720p", label: "Seedance 2.5", tier: "720p", capability: "video", price: { amount: 0.88, per: "second" }, redundancy: 1, fragile: true, note: "同上，供给单点" },
-            { name: "sd-2.5-1080p", label: "Seedance 2.5", tier: "1080p", capability: "video", price: { amount: 1.98, per: "second" }, redundancy: 1, fragile: true, note: "同上，供给单点" },
+            { name: "sd-2.5-480p", label: "Seedance 2.5", tier: "480p", capability: "video", price: { amount: 0.38, per: "second" }, redundancy: 1, fragile: true, note: "支持锁脸/参考视频/4–30 秒" },
+            { name: "sd-2.5-720p", label: "Seedance 2.5", tier: "720p", capability: "video", price: { amount: 0.88, per: "second" }, redundancy: 1, fragile: true, note: "支持锁脸/参考视频/4–30 秒" },
+            { name: "sd-2.5-1080p", label: "Seedance 2.5", tier: "1080p", capability: "video", price: { amount: 1.98, per: "second" }, redundancy: 1, fragile: true, note: "支持锁脸/参考视频/4–30 秒" },
             // leonardo-* 是同价别名，不重复暴露
         ],
     },
@@ -89,7 +89,7 @@ export const NYCATAI_GROUPS: NycataiGroupDef[] = [
         channelName: "视频·一口价",
         // 不设 defaultModel：视频默认走 overseas 的 kling-3.0（按秒更便宜）
         models: [
-            { name: "seedance-2.0", label: "Seedance 2.0 一口价", capability: "video", price: { amount: 2.85, per: "call" }, redundancy: 4, note: "不乘时长，4–15 秒同价" },
+            { name: "seedance-2.0", label: "Seedance 2.0 一口价", capability: "video", price: { amount: 2.85, per: "call" }, redundancy: 4, note: "4–15 秒同价" },
             { name: "minimax-h3-2k", label: "MiniMax H3", tier: "2K", capability: "video", price: { amount: 3.5, per: "call" }, redundancy: 4, note: "分辨率与时长固定" },
         ],
     },
