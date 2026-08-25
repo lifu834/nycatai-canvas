@@ -8,8 +8,9 @@ describe("nycatai pricing", () => {
         expect(estimateImageCost("default::gpt-image-2", 2)).toBeNull();
     });
 
-    it("受管渠道无价格数据的模型返回 null（宁缺毋滥）", () => {
-        expect(estimateImageCost("nycatai-image::gpt-image-2", 1)).toBeNull(); // tiered_expr 按尺寸分档，无常量单价
+    it("阶梯计费模型标 ≈ 价（gpt-image-2 非 vvip 是 flat 一口价）", () => {
+        expect(estimateImageCost("nycatai-image::gpt-image-2", 2)!.amount).toBeCloseTo(0.12);
+        expect(unitPriceLabel("gpt-image-2")).toBe("≈¥0.060/张");
     });
 
     it("按张计价 × 数量", () => {

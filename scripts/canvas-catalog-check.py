@@ -21,6 +21,7 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.request
 
 GATEWAY = "https://api.nycatai.com"
@@ -32,7 +33,7 @@ def http_json(url, key):
         return json.loads(r.read())
 
 
-def probe_routable(group, model, key, timeout=90):
+def probe_routable_once(group, model, key, timeout=90):
     """下单探测可路由性：model_not_found ⇒ 不可路由；其它错误 ⇒ 已到上游 ⇒ 可路由。
     返回 True/False/None(网络异常，判不了)。"""
     body = json.dumps({"model": model, "prompt": ""}).encode()
@@ -68,6 +69,24 @@ def parse_catalog(path):
         dm = re.search(r'defaultModel:\s*"([^"]+)"', head)
         groups[g] = {"models": models, "default": dm.group(1) if dm else None}
     return groups
+
+
+def probe_routable(group, model, key, timeout=90, retries=1):
+    """带重试的可路由性判定。
+
+    🔑 `No available channel` 文案有歧义：既可能是"模型不存在"，也可能是"模型在但此刻
+    所有渠道都忙/冷却"——后者是瞬时的（实测撞到过 kling-3.0-1080p 误报，手动复测即恢复）。
+    所以判死前重试，任意一次探到"已路由"就算可路由，降低误报。
+    注意：本脚本查得出"模型不可路由"，查不出"渠道在但底下没货"。
+    """
+    for attempt in range(retries + 1):
+        verdict = probe_routable_once(group, model, key, timeout)
+        if verdict is not False:
+            return verdict
+        if attempt < retries:
+            time.sleep(4)
+    return False
+
 
 
 def main():

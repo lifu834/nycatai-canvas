@@ -25,6 +25,8 @@ export type NycataiModelDef = {
     price?: { amount: number; per: "second" | "image" | "call" };
     /** 按 token 计费的模型：new-api 倍率，每 1M tokens 价 = 2.0 × ratio（与主站 models 页同口径） */
     tokenRatio?: { input: number; completionMultiplier: number; cacheMultiplier?: number };
+    /** 价格为阶梯/近似值（如 tiered_expr 分档），展示时加 ≈ */
+    approxPrice?: boolean;
     /** 冗余渠道条数：越厚越稳，默认模型优先选厚的 */
     redundancy?: number;
     /** ⚠️ 单点单家供给，勿设默认；失败时应引导用户改用替代模型 */
@@ -59,9 +61,10 @@ export const NYCATAI_GROUPS: NycataiGroupDef[] = [
             { name: "nano-banana-2-4k", label: "Nano Banana 2", tier: "4K", capability: "image", price: { amount: 0.14, per: "image" }, redundancy: 5, note: "真 4K" },
             { name: "nano-banana-pro", label: "Nano Banana Pro", tier: "1K", capability: "image", price: { amount: 0.1, per: "image" }, redundancy: 5 },
             { name: "nano-banana-pro-2k", label: "Nano Banana Pro", tier: "2K", capability: "image", price: { amount: 0.13, per: "image" }, redundancy: 3 },
-            { name: "nano-banana-pro-4k", label: "Nano Banana Pro", tier: "4K", capability: "image", price: { amount: 0.15, per: "image" }, redundancy: 3, note: "真 4096²，AI 放大首选" },
+            { name: "nano-banana-pro-4k", label: "Nano Banana Pro", tier: "4K", capability: "image", price: { amount: 0.15, per: "image" }, redundancy: 3, note: "真 4096²" },
             { name: "gpt-image-2-1k", label: "GPT Image 2", tier: "1K", capability: "image", price: { amount: 0.02, per: "image" }, redundancy: 2, note: "号池原生输出 1254×1254，不是 1024²" },
-            { name: "ex-gpt-image-2", label: "GPT Image 2 外部原生", tier: "按尺寸", capability: "image", price: { amount: 0.1, per: "image" }, redundancy: 3, note: "唯一按 size 出档的生图 SKU" },
+            { name: "gpt-image-2", label: "GPT Image 2", tier: "超分", capability: "image", price: { amount: 0.06, per: "image" }, approxPrice: true, redundancy: 1, note: "号池出图 + 本地超分，支持官方 7 档尺寸；标准档一口价，vvip 按尺寸分档" },
+            { name: "ex-gpt-image-2", label: "ex-gpt-image-2", tier: "按尺寸", capability: "image", price: { amount: 0.1, per: "image" }, redundancy: 3, note: "原生渠道，档位由请求的 size 决定" },
         ],
     },
     {

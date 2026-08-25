@@ -54,7 +54,7 @@ export function unitPriceLabel(sku: string): string | null {
     const model = findNycataiModelDef(sku);
     if (model?.price) {
         const unit = model.price.per === "second" ? "/秒" : model.price.per === "call" ? "/次" : "/张";
-        return `${formatCost(model.price.amount)}${unit}`;
+        return `${model.approxPrice ? "≈" : ""}${formatCost(model.price.amount)}${unit}`;
     }
     if (model?.tokenRatio) {
         // 文本模型按 token 计费：展示「输入/输出」两个价，用户最关心的就是这两个数
