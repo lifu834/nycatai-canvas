@@ -63,8 +63,9 @@ export const NYCATAI_GROUPS: NycataiGroupDef[] = [
             { name: "nano-banana-pro-2k", label: "Nano Banana Pro", tier: "2K", capability: "image", price: { amount: 0.13, per: "image" }, redundancy: 3 },
             { name: "nano-banana-pro-4k", label: "Nano Banana Pro", tier: "4K", capability: "image", price: { amount: 0.15, per: "image" }, redundancy: 3, note: "真 4096²" },
             { name: "gpt-image-2-1k", label: "GPT Image 2", tier: "1K", capability: "image", price: { amount: 0.02, per: "image" }, redundancy: 2, note: "号池原生输出 1254×1254，不是 1024²" },
-            { name: "gpt-image-2", label: "GPT Image 2", tier: "超分", capability: "image", price: { amount: 0.06, per: "image" }, approxPrice: true, redundancy: 1, note: "号池出图 + 本地超分，支持官方 7 档尺寸；标准档一口价，vvip 按尺寸分档" },
-            { name: "ex-gpt-image-2", label: "ex-gpt-image-2", tier: "按尺寸", capability: "image", price: { amount: 0.1, per: "image" }, redundancy: 3, note: "原生渠道，档位由请求的 size 决定" },
+            { name: "gpt-image-2", label: "GPT Image 2", tier: "超分", capability: "image", price: { amount: 0.06, per: "image" }, approxPrice: true, redundancy: 1, note: "号池出图 + API超分" },
+            // 统一价 ¥0.10（quota_type=1 固定价，非按尺寸分档）；输出尺寸随请求 size 变化但不影响计价
+            { name: "ex-gpt-image-2", label: "ex-gpt-image-2", capability: "image", price: { amount: 0.1, per: "image" }, redundancy: 3, note: "adobe原生渠道；如需 az 原生渠道请联系客服" },
         ],
     },
     {
