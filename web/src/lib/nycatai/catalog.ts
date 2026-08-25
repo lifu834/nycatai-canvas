@@ -23,6 +23,8 @@ export type NycataiModelDef = {
     capability: ModelCapability;
     /** 单价，单位人民币 */
     price?: { amount: number; per: "second" | "image" | "call" };
+    /** 按 token 计费的模型：new-api 倍率，每 1M tokens 价 = 2.0 × ratio（与主站 models 页同口径） */
+    tokenRatio?: { input: number; completionMultiplier: number; cacheMultiplier?: number };
     /** 冗余渠道条数：越厚越稳，默认模型优先选厚的 */
     redundancy?: number;
     /** ⚠️ 单点单家供给，勿设默认；失败时应引导用户改用替代模型 */
@@ -98,9 +100,12 @@ export const NYCATAI_GROUPS: NycataiGroupDef[] = [
         channelName: "对话",
         defaultModel: "gpt-5.5",
         models: [
-            { name: "gpt-5.5", label: "GPT-5.5", capability: "text" },
-            { name: "gpt-5.4", label: "GPT-5.4", capability: "text" },
-            { name: "gpt-5.4-mini", label: "GPT-5.4 Mini", capability: "text" },
+            { name: "gpt-5.5", label: "GPT-5.5", capability: "text", tokenRatio: { input: 2.5, completionMultiplier: 6, cacheMultiplier: 0.1 }, note: "综合能力强" },
+            { name: "gpt-5.6-terra", label: "GPT-5.6 Terra", capability: "text", tokenRatio: { input: 1, completionMultiplier: 6, cacheMultiplier: 0.1 }, note: "5.6 代，价格仅 GPT-5.5 的 4 成" },
+            { name: "gpt-5.6-sol", label: "GPT-5.6 Sol", capability: "text", tokenRatio: { input: 2.5, completionMultiplier: 6, cacheMultiplier: 0.1 }, note: "5.6 代旗舰，与 GPT-5.5 同价" },
+            { name: "gpt-5.4", label: "GPT-5.4", capability: "text", tokenRatio: { input: 1.25, completionMultiplier: 6, cacheMultiplier: 0.1 } },
+            { name: "gpt-5.4-mini", label: "GPT-5.4 Mini", capability: "text", tokenRatio: { input: 0.375, completionMultiplier: 6, cacheMultiplier: 0.1 }, note: "最省，适合简单改写" },
+            // gpt-5.6-luna（ratio 0.1）只挂 codex_pro 分组，canvas 走 /codex 拿不到，故不收录
         ],
     },
 ];

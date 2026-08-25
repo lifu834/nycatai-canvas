@@ -42,12 +42,27 @@ export function formatCost(amount: number): string {
     return `¥${amount.toFixed(amount < 0.1 ? 3 : 2)}`;
 }
 
-/** 下拉/标签用的单价文案："¥0.08/张" / "¥0.08/秒" / "¥2.85/次"；无常量单价返回 null */
+/** new-api 口径：每 1M tokens 价 = 2.0 × ratio（与主站 models 页 formatPricePerMillion 一致） */
+const TOKEN_PRICE_BASE = 2.0;
+
+export function tokenPricePerMillion(ratio: number): number {
+    return TOKEN_PRICE_BASE * ratio;
+}
+
+/** 下拉/标签用的单价文案："¥0.08/张" / "¥0.08/秒" / "¥2.85/次" / "¥5.00/¥30.00 每 1M" */
 export function unitPriceLabel(sku: string): string | null {
     const model = findNycataiModelDef(sku);
-    if (!model?.price) return null;
-    const unit = model.price.per === "second" ? "/秒" : model.price.per === "call" ? "/次" : "/张";
-    return `${formatCost(model.price.amount)}${unit}`;
+    if (model?.price) {
+        const unit = model.price.per === "second" ? "/秒" : model.price.per === "call" ? "/次" : "/张";
+        return `${formatCost(model.price.amount)}${unit}`;
+    }
+    if (model?.tokenRatio) {
+        // 文本模型按 token 计费：展示「输入/输出」两个价，用户最关心的就是这两个数
+        const input = tokenPricePerMillion(model.tokenRatio.input);
+        const output = tokenPricePerMillion(model.tokenRatio.input * model.tokenRatio.completionMultiplier);
+        return `¥${input.toFixed(2)}/¥${output.toFixed(2)}`;
+    }
+    return null;
 }
 
 /** 计费规则一句话（含时长/档位限制等），供下拉副标题展示 */
@@ -58,7 +73,10 @@ export function billingRuleLabel(sku: string): string | null {
     if (model.price?.per === "second") parts.push("按秒计费");
     else if (model.price?.per === "call") parts.push("一口价");
     else if (model.price?.per === "image") parts.push("按张计费");
-    else parts.push("按 token 计费");
+    else if (model.tokenRatio) {
+        const cache = model.tokenRatio.cacheMultiplier;
+        parts.push(`输入/输出 每 1M tokens${cache ? `，缓存命中 ${Math.round(cache * 100)}%` : ""}`);
+    } else parts.push("按 token 计费");
     if (model.note) parts.push(model.note);
     if (model.fragile) parts.push("⚠ 线路少，故障时改用 Seedance 2.0");
     return parts.join(" · ");

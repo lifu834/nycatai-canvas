@@ -3,18 +3,12 @@ import { Tag, Tooltip } from "antd";
 import { Layers, Lock, ShieldCheck } from "lucide-react";
 
 import { NYCATAI_GROUPS, NYCATAI_CHANNEL_PREFIX, nycataiModelLabel } from "@/lib/nycatai/catalog";
-import { formatCost } from "@/lib/nycatai/pricing";
+import { unitPriceLabel } from "@/lib/nycatai/pricing";
 import type { ModelChannel } from "@/stores/use-config-store";
 
 // NYCATAI 渠道面板（只读）：本站只接入 nycatai 自己的接口与模型，
 // 因此替换掉上游"自建渠道"的增删改 UI，改为展示受管渠道 + 模型清单 + 真实单价。
 // 密钥由主站一键拉起注入（hash fragment），用户无需也不应手工填写。
-
-function priceLabel(price?: { amount: number; per: "second" | "image" | "call" }, t?: (k: string) => string): string | null {
-    if (!price) return null;
-    const unit = price.per === "second" ? "/秒" : price.per === "call" ? "/次" : "/张";
-    return `${formatCost(price.amount)}${unit}`;
-}
 
 export function NycataiChannelsPanel({ channels }: { channels: ModelChannel[] }) {
     const { t } = useTranslation();
@@ -47,7 +41,7 @@ export function NycataiChannelsPanel({ channels }: { channels: ModelChannel[] })
 
                         <div className="mt-3 flex flex-wrap gap-1.5">
                             {def.models.map((model) => {
-                                const price = priceLabel(model.price);
+                                const price = unitPriceLabel(model.name);
                                 return (
                                     <Tooltip key={model.name} title={[model.note, `SKU: ${model.name}`, model.redundancy ? `${model.redundancy} 条线路` : ""].filter(Boolean).join(" · ")}>
                                         <Tag className="!mr-0 !border-stone-200 !bg-transparent !text-xs dark:!border-stone-700">

@@ -39,7 +39,9 @@ describe("nycatai pricing", () => {
         expect(unitPriceLabel("kling-3.0")).toBe("¥0.080/秒");
         expect(unitPriceLabel("seedance-2.0")).toBe("¥2.85/次");
         expect(unitPriceLabel("gpt-image-2-1k")).toBe("¥0.020/张");
-        expect(unitPriceLabel("gpt-5.5")).toBeNull(); // 按 token 无常量单价
+        expect(unitPriceLabel("gpt-5.5")).toBe("¥5.00/¥30.00"); // 文本模型展示 输入/输出 每 1M
+        expect(unitPriceLabel("gpt-5.6-terra")).toBe("¥2.00/¥12.00"); // ratio 1 → 输入 ¥2/1M
+        expect(unitPriceLabel("no-such-sku")).toBeNull();
     });
 
     it("计费规则含单位说明、限制与线路风险", () => {
@@ -47,6 +49,7 @@ describe("nycatai pricing", () => {
         expect(billingRuleLabel("seedance-2.0")).toContain("一口价");
         expect(billingRuleLabel("veo-3.1")).toContain("4/6/8 秒");
         expect(billingRuleLabel("sd-2.5-720p")).toContain("线路少");
-        expect(billingRuleLabel("gpt-5.5")).toContain("token");
+        expect(billingRuleLabel("gpt-5.5")).toContain("每 1M tokens");
+        expect(billingRuleLabel("gpt-5.6-terra")).toContain("缓存命中 10%");
     });
 });
