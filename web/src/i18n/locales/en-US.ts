@@ -384,9 +384,10 @@ export default {
     },
     home: {
         promptError: "Failed to load prompts",
-        description: "Generate, connect, and reshape <content>images, text, and graphics</content> in <canvas>Infinite Canvas</canvas>, turning one-off generations into a continuous creative process.",
-        start: "Get started",
-        openCanvas: "Open canvas",
+        heroTitle: "Images, video and chat,<br/>strung together on <accent>one canvas</accent>",
+        heroSub: "Wires carry context · per-image / per-second billing · price shown before you generate · one click from the main site",
+        newCanvas: "New canvas",
+        fromTemplate: "Start from a template",
         showcaseTitle: "Keep every great result",
         showcaseDescription: "Save reliable prompts, visual references, and generated images so your next creation starts from proven ideas.",
         viewPrompts: "View prompt library",

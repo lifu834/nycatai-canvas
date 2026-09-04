@@ -94,7 +94,7 @@ export default function CanvasPage() {
                                 {t("canvas.deleteAll")}
                             </Button>
                         ) : null}
-                        <NycataiTemplateGallery disabled={!hydrated} />
+                        <NycataiTemplateGallery disabled={!hydrated} autoOpen={searchParams.get("templates") === "1"} />
                         <Button disabled={!hydrated} icon={<FileUp className="size-4" />} onClick={() => inputRef.current?.click()}>
                             {t("canvas.import")}
                         </Button>

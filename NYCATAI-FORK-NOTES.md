@@ -25,13 +25,15 @@
 | `web/src/lib/canvas/canvas-generation-helpers.ts` | 第 51 行 `node.metadata.images` → `node.metadata?.images`（上游遗留 TS18048，会让 `tsc --noEmit` 常红） | 上游自己修了就取上游 |
 | `web/src/constant/navigation-tools.ts` | 新增 `chat` 导航项（MessageSquare 图标，排在 video 与 prompts 之间） | 上游加/减导航项时保留我方一项 |
 | `web/src/router.tsx` | 新增 `/chat` 路由 + `ChatPage` import（2 行） | 冲突时保留我方两行 |
-| `web/src/pages/home/index.tsx` | 首页图墙：多取 36 条按「有封面」优先排序，无封面/加载失败退化成文字卡（上游直接渲染 `<img src={coverUrl}>`，源没有封面就是一片碎图） | 上游改图墙时重新挂 |
+| `web/src/pages/home/index.tsx` | ① hero 整块换成左对齐主张 + 双 CTA（对齐主站欢迎页；删掉上游的 aurora 渐变标题与橙/天蓝 Highlighter —— 两个高亮色都不是品牌色）；②「新建画布」直接 `createProject` 后进画布，**不走 `/canvas?mode=new`**（那条是 Agent 入口，会顺带弹 Agent 面板）；③ 图墙多取 36 条按「有封面」优先排序，无封面/加载失败退化成文字卡（上游直接渲染 `<img src={coverUrl}>`，源没封面就是一片碎图） | 上游改首页时整块重写 |
+| `web/src/pages/canvas/index.tsx` | 模板画廊接 `autoOpen={searchParams.get("templates") === "1"}`（首页「从模板开始」入口） | 冲突时保留我方一处 |
 | `web/src/components/layout/client-root-init.tsx` | 整文件重写：无条件 `applyNycataiBootstrap()`，**移除上游 ?baseUrl=/?apiKey= 外部接口导入** | 合并时保留我方版本 |
 
 ## nycatai 专属文件（无冲突面）
 
 - `web/src/lib/nycatai/catalog.ts` — 三分组模型目录（image/video/codex；260826 overseas 已并入 video）+ 真实单价 + 冗余条数；按 nycatai-ops 校准包维护。
 - `web/src/lib/nycatai/bootstrap.ts` — 启动时无条件规整为 4 个 `nycatai-` 受管渠道并移除外部渠道；保留 per-model 脚本与已注入 key；失效模型自动回落默认。
+- `web/src/components/nycatai/template-gallery.tsx` — 模板画廊；`autoOpen` 用 effect 直接 `setOpen(true)`，**不要加「已打开过」的 ref 守卫**：StrictMode 重跑 effect 时 ref 已置位会把 setOpen 吃掉（本仓第二次踩，第一次是顶栏消耗徽标的 alive ref）。
 - `web/src/lib/nycatai/chat.ts` + `chat.test.ts` — 简易对话（`/chat` 页）：复用 copilot 的 `/v1/responses` 流式客户端但 **tools 传空**；会话存 localStorage（留 100 条），上行只带最近 20 条（文本按 token 计费，历史会重复付费）。
 - `web/src/pages/chat/index.tsx` — 对话页本体（模型下拉 + 单价/计费规则 + 复制/存为资产 + 中断）。
 - `web/src/lib/nycatai/bootstrap.test.ts` + `web/vitest.config.ts` — 单测（`bun run test` / `node node_modules/vitest/vitest.mjs run`）；合并上游后必跑。

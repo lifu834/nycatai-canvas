@@ -1,11 +1,11 @@
-import { ArrowRight, FileText } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { ArrowRight, FileText, Zap } from "lucide-react";
+import { useEffect, useState } from "react";
 import { App, Button, Image, Tag } from "antd";
 import { useNavigate } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 
 import { fetchPrompts, type Prompt } from "@/services/api/prompts";
-import { navigationTools } from "@/constant/navigation-tools";
+import { useCanvasStore } from "@/stores/canvas/use-canvas-store";
 import i18n from "@/i18n";
 import { cn } from "@/lib/utils";
 
@@ -13,24 +13,13 @@ import { cn } from "@/lib/utils";
 const SHOWCASE_SIZE = 12;
 const SHOWCASE_POOL_SIZE = 36;
 
-function Highlighter({ action, color, children }: { action: "highlight" | "underline"; color: string; children?: ReactNode }) {
-    return (
-        <span className="relative inline-block px-1">
-            {action === "highlight" ? (
-                <span className="absolute inset-x-0 bottom-0 top-1 rounded-sm opacity-45" style={{ backgroundColor: color }} />
-            ) : (
-                <span className="absolute inset-x-0 bottom-0 h-1 rounded-full opacity-80" style={{ backgroundColor: color }} />
-            )}
-            <span className="relative font-medium text-stone-800 dark:text-stone-200">{children}</span>
-        </span>
-    );
-}
-
 export default function IndexPage() {
     const { message } = App.useApp();
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const [primaryTool] = navigationTools;
+    const canvasHydrated = useCanvasStore((state) => state.hydrated);
+    const canvasProjects = useCanvasStore((state) => state.projects);
+    const createProject = useCanvasStore((state) => state.createProject);
     const [promptShowcase, setPromptShowcase] = useState<Prompt[]>([]);
     const [brokenCovers, setBrokenCovers] = useState<string[]>([]);
     const [previewIndex, setPreviewIndex] = useState(0);
@@ -48,6 +37,13 @@ export default function IndexPage() {
             .catch((error) => message.error(error instanceof Error ? error.message : i18n.t("home.promptError")));
     }, [message]);
 
+    // 建完直接进画布。不走上游的 /canvas?mode=new —— 那条是 Agent 入口，会顺带弹出 Agent 面板
+    // （project.tsx: mode 为 new/recent/choose 时 openAgentPanel）。等 hydrated 再建，避免被持久化状态覆盖。
+    const startNewCanvas = () => {
+        if (!canvasHydrated) return;
+        navigate(`/canvas/${createProject(t("canvas.defaultTitle", { count: canvasProjects.length + 1 }))}`);
+    };
+
     // 封面可能是外链（GitHub raw 等），加载失败时退化成文字卡，不留碎图
     const usableCover = (item: Prompt) => Boolean(item.coverUrl) && !brokenCovers.includes(item.id);
     const previewItems = promptShowcase.filter(usableCover);
@@ -58,17 +54,19 @@ export default function IndexPage() {
                 <div className="pointer-events-none absolute left-[15%] top-24 size-20 rounded-full border border-dashed border-stone-200 dark:border-stone-800" />
                 <div className="pointer-events-none absolute right-[23%] top-[48%] size-20 rounded-full border border-dashed border-stone-200 dark:border-stone-800" />
 
-                <div className="relative flex min-h-[620px] flex-col items-center justify-center pt-10 text-center">
-                    <h1 className="ai-title-aurora max-w-5xl text-balance text-5xl font-semibold tracking-normal sm:text-7xl lg:text-8xl">{t("meta.title")}</h1>
-                    <p className="mt-8 max-w-3xl text-balance text-lg leading-8 text-stone-500 dark:text-stone-400">
-                        <Trans i18nKey="home.description" components={{ canvas: <Highlighter action="underline" color="#FF9800" />, content: <Highlighter action="highlight" color="#87CEFA" /> }} />
-                    </p>
-                    <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-                        <Button type="primary" size="large" onClick={() => navigate(`/${primaryTool.slug}`)} icon={<ArrowRight className="size-4" />} iconPlacement="end">
-                            {t("home.start")}
+                {/* NYCATAI hero：左对齐主张 + 双 CTA，对齐主站欢迎页（标题是主张不是产品名，重点词用赤陶）。
+                    原上游 hero 是居中 aurora 渐变大字 + 橙/天蓝高亮，两个高亮色都不是品牌色。 */}
+                <div className="relative flex min-h-[420px] flex-col justify-center py-16 sm:py-20">
+                    <h1 className="max-w-3xl text-balance text-4xl font-bold leading-[1.15] tracking-tight text-stone-950 sm:text-5xl lg:text-[52px] dark:text-stone-100">
+                        <Trans i18nKey="home.heroTitle" components={{ accent: <span className="text-[#c4704b] dark:text-[#d4815c]" /> }} />
+                    </h1>
+                    <p className="mt-4 max-w-2xl text-[15px] leading-7 tracking-wide text-stone-500 dark:text-stone-400">{t("home.heroSub")}</p>
+                    <div className="mt-7 flex flex-wrap items-center gap-3">
+                        <Button type="primary" size="large" disabled={!canvasHydrated} onClick={startNewCanvas} icon={<Zap className="size-[18px]" />}>
+                            {t("home.newCanvas")}
                         </Button>
-                        <Button size="large" onClick={() => navigate("/canvas")}>
-                            {t("home.openCanvas")}
+                        <Button size="large" onClick={() => navigate("/canvas?templates=1")} icon={<ArrowRight className="size-4" />} iconPlacement="end">
+                            {t("home.fromTemplate")}
                         </Button>
                     </div>
                 </div>

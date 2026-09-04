@@ -384,9 +384,10 @@ export default {
     },
     home: {
         promptError: "获取提示词失败",
-        description: "在 <canvas>无限画布</canvas> 中生成、连接和重组 <content>图片、文字与图形</content>，让创作从单次生成变成连续推演。",
-        start: "开始使用",
-        openCanvas: "打开画布",
+        heroTitle: "生图、视频、对话<br/>在<accent>一块画布</accent>上串起来",
+        heroSub: "连线即上下文 · 按张 / 按秒计费 · 单价当场可见 · 从主站一键进来即用",
+        newCanvas: "新建画布",
+        fromTemplate: "从模板开始",
         showcaseTitle: "沉淀每一次好结果",
         showcaseDescription: "收藏稳定出图的提示词、参考风格和结果图片，让下一次创作从已有经验开始。",
         viewPrompts: "查看提示词库",

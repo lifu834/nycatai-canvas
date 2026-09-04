@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button, Modal } from "antd";
@@ -8,11 +8,19 @@ import { NYCATAI_TEMPLATES } from "@/lib/nycatai/templates";
 import { useCanvasStore } from "@/stores/canvas/use-canvas-store";
 
 // NYCATAI 模板画廊（P3）：画布列表页入口，一键克隆模板进本地并直接打开。
-export function NycataiTemplateGallery({ disabled }: { disabled?: boolean }) {
+// autoOpen = 首页「从模板开始」带 ?templates=1 进来时直接展开（等 store hydrated，避免克隆时机竞态）。
+export function NycataiTemplateGallery({ disabled, autoOpen }: { disabled?: boolean; autoOpen?: boolean }) {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const importProject = useCanvasStore((state) => state.importProject);
     const [open, setOpen] = useState(false);
+
+    // 不用 ref 记"已自动打开过"：StrictMode 会重跑 effect，ref 一旦置位就把真正的 setOpen 吃掉
+    // （本仓踩过同款，见 NYCATAI-FORK-NOTES「已知限制」）。依赖只在 hydrated 翻转或 URL 变化时动，
+    // 所以用户手动关掉后不会被重新打开。
+    useEffect(() => {
+        if (autoOpen && !disabled) setOpen(true);
+    }, [autoOpen, disabled]);
 
     const clone = (templateId: string) => {
         const template = NYCATAI_TEMPLATES.find((item) => item.id === templateId);
