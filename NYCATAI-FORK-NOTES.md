@@ -12,7 +12,8 @@
 | `web/src/components/canvas/canvas-plugin-manager-modal.tsx` | 第三方插件 URL 安装 Tab 由 `VITE_ALLOW_PLUGIN_URL_INSTALL` 门禁（默认关） | 上游改 Tabs 结构时重点回归 |
 | `web/package.json` | 加 `test`/`deploy:pages` 脚本 + devDeps（vitest / happy-dom） | 合并时保留我方行 |
 | `web/src/pages/image/index.tsx`、`video/index.tsx` | 生成按钮上方插 `<NycataiCostHint/>`（各 1 行 + import） | 上游改按钮区布局时重新挂 |
-| `web/src/components/layout/app-top-nav.tsx` | 右侧动作区插 `<NycataiUsageBadge/>`；fragment 尾部挂 `<NycataiCopilot/>`（全局挂载，自身按 canvasContext+凭据决定显隐）；logo 换 mascot img | 同上 |
+| `web/src/components/layout/app-top-nav.tsx` | 右侧动作区插 `<NycataiUsageBadge/>`；fragment 尾部挂 `<NycataiCopilot/>`（全局挂载，自身按 canvasContext+凭据决定显隐）；logo 换 mascot img；导航 `<a>` 的 `text-stone-*` 全部加 `!`（见下方 antd 链接色一节） | 同上 |
+| `web/src/components/layout/{user-status-actions,github-link,mobile-nav-drawer}.tsx` | 同上：`<a>` 的 `text-stone-*` 加 `!` | 上游改这几处 class 时补回 `!` |
 | `web/src/i18n/locales/zh-CN.ts`、`en-US.ts` | `meta.*` 品牌 + `nycatai.*` 键组 | 冲突时保留我方两块，其余全取上游 |
 | `web/src/main.tsx` | 引入 `nycatai-theme.css`（必须在 globals.css 之后）+ 字体栈改主站同款 | 上游改字体行时保留我方 |
 | `web/src/pages/{home,prompts,assets,not-found}/index.tsx` | 去掉 `<main>` 上的网格点底图（`bg-[radial-gradient(...)]` + `[background-size:16px_16px]`），改纯色 `bg-background`；首页同时去掉两个虚线圆装饰 | 上游重加点阵时按我方去掉 |
@@ -47,6 +48,13 @@
 - 目录数据源 = 生产 `abilities` + `ModelPrice`（见 nycatai-ops 校准包）；**`/v1/models` 不是可路由性的真相**（nano-banana-pro-2k/-4k 不在列表却能路由），判可路由用 `canvas-catalog-check.py` 的下单探测。
 
 ## 已知限制
+
+- **antd 的链接色会染掉导航 chrome。** antd reset 里有一条**未分层**的
+  `:where(.css-<hash>) a { color: var(--ant-color-link) }`；未分层规则整体压过 Tailwind 的
+  `@layer utilities`，所以 `text-stone-*` 在 `<a>` 上全部失效 —— 表现是同一排里 `<button>` 中性色、
+  `<a>` 被染成品牌陶土橙（`colorLink` = accent，见 `app-theme.ts`）。顶栏/抽屉/GitHub 链接已用
+  `!` 修正；**上游新增导航链接时会重现**。试过 `color: revert-layer`，回退不到 Tailwind 的值，只能 `!important`。
+  注意这只处理"导航 chrome"，正文里的链接仍然是陶土橙（那是有意的）。
 
 - `/chat` 与画布「编排助手」分工：前者纯文本无工具，后者能直接操作画布。两者共用 `codex` 渠道与 `config.textModel`。
 - codex 号池会在每个请求上注入约 4.4k tokens 的 Codex 人格 `instructions`（其中约 3.8k 走缓存），所以对话有固定的输入 token 底噪，短问题也不是零成本。

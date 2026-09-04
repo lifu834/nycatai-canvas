@@ -13,6 +13,10 @@ import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
 import { useAgentStore } from "@/stores/use-agent-store";
 
+// NYCATAI: 顶栏/抽屉里的 text-stone-* 都带 `!` —— antd reset 有一条**未分层**的
+// `:where(.css-hash) a { color: var(--ant-color-link) }`，未分层规则整体压过 Tailwind 的
+// @layer utilities，于是同一排里 <button> 是中性色、<a> 全被染成品牌陶土橙（导航是 chrome，
+// 不该跟内容链接同色）。revert-layer 试过，回退不到 Tailwind 的值，只能用 !important。
 export function AppTopNav() {
     const { t } = useTranslation();
     const { pathname } = useLocation();
@@ -40,7 +44,7 @@ export function AppTopNav() {
                 <header className="sticky top-0 z-20 h-14 shrink-0 border-b border-stone-200 bg-background/90 backdrop-blur-xl dark:border-stone-800">
                     <div className="mx-auto flex h-full max-w-7xl items-stretch justify-between gap-5 px-6">
                         <div className="flex min-w-0 items-center">
-                            <Link to="/" className="flex h-full shrink-0 items-center gap-2 text-sm font-semibold leading-none tracking-tight text-stone-950 transition hover:text-stone-600 dark:text-stone-100 dark:hover:text-stone-300">
+                            <Link to="/" className="flex h-full shrink-0 items-center gap-2 text-sm font-semibold leading-none tracking-tight !text-stone-950 transition hover:!text-stone-600 dark:!text-stone-100 dark:hover:!text-stone-300">
                                 <img src="/mascot-head.png" alt="" className="size-5 shrink-0" style={{ imageRendering: "pixelated" }} />
                                 <span className="text-base font-medium">{t("meta.title")}</span>
                             </Link>
@@ -66,8 +70,8 @@ export function AppTopNav() {
                                             className={cn(
                                                 "relative flex h-14 shrink-0 items-center gap-2 text-sm leading-6 transition after:absolute after:inset-x-0 after:bottom-0 after:h-px",
                                                 active
-                                                    ? "font-medium text-stone-950 after:bg-stone-950 dark:text-stone-100 dark:after:bg-stone-100"
-                                                    : "text-stone-500 after:bg-transparent hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-100",
+                                                    ? "font-medium !text-stone-950 after:bg-stone-950 dark:!text-stone-100 dark:after:bg-stone-100"
+                                                    : "!text-stone-500 after:bg-transparent hover:!text-stone-950 dark:!text-stone-400 dark:hover:!text-stone-100",
                                             )}
                                         >
                                             <Icon className="size-4" />
