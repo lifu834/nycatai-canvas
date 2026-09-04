@@ -4,4 +4,11 @@
 
 :root {
     --font-sans: "Inter", system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    /* 页面底色对齐主站 --c-page（上游是纯白 oklch(1 0 0)）。只覆盖这一个 token：
+     * 卡片/弹层等 surface 仍走上游中性色，不是整套色阶重映射。 */
+    --background: #faf9f7;
+}
+
+.dark {
+    --background: #1a1915;
 }

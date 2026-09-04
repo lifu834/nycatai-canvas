@@ -15,6 +15,7 @@
 | `web/src/components/layout/app-top-nav.tsx` | 右侧动作区插 `<NycataiUsageBadge/>`；fragment 尾部挂 `<NycataiCopilot/>`（全局挂载，自身按 canvasContext+凭据决定显隐）；logo 换 mascot img | 同上 |
 | `web/src/i18n/locales/zh-CN.ts`、`en-US.ts` | `meta.*` 品牌 + `nycatai.*` 键组 | 冲突时保留我方两块，其余全取上游 |
 | `web/src/main.tsx` | 引入 `nycatai-theme.css`（必须在 globals.css 之后）+ 字体栈改主站同款 | 上游改字体行时保留我方 |
+| `web/src/pages/{home,prompts,assets,not-found}/index.tsx` | 去掉 `<main>` 上的网格点底图（`bg-[radial-gradient(...)]` + `[background-size:16px_16px]`），改纯色 `bg-background`；首页同时去掉两个虚线圆装饰 | 上游重加点阵时按我方去掉 |
 | `web/src/lib/app-theme.ts` | 点缀式换肤：colorPrimary/colorLink/选中态 → 陶土橙，中性色不动 | 上游重构主题结构时重新挂 |
 | `web/src/components/layout/app-providers.tsx` | ProConfigProvider 换到外层（其 dark 预设会派生覆盖 colorPrimary） | 上游改 provider 链时重点回归 |
 | `web/src/pages/canvas/index.tsx` | 头部插 `<NycataiTemplateGallery/>`（1 行 + import） | 上游改列表页头部时重新挂 |
@@ -31,6 +32,7 @@
 
 ## nycatai 专属文件（无冲突面）
 
+- `web/src/styles/nycatai-theme.css` — 字体栈 + **页面底色**：只覆盖 `--background` 一个 token 对齐主站 `--c-page`（亮 `#faf9f7` / 暗 `#1a1915`），卡片等 surface 仍走上游中性色，不是整套色阶重映射。
 - `web/src/lib/nycatai/catalog.ts` — 三分组模型目录（image/video/codex；260826 overseas 已并入 video）+ 真实单价 + 冗余条数；按 nycatai-ops 校准包维护。
 - `web/src/lib/nycatai/bootstrap.ts` — 启动时无条件规整为 4 个 `nycatai-` 受管渠道并移除外部渠道；保留 per-model 脚本与已注入 key；失效模型自动回落默认。
 - `web/src/components/nycatai/template-gallery.tsx` — 模板画廊；`autoOpen` 用 effect 直接 `setOpen(true)`，**不要加「已打开过」的 ref 守卫**：StrictMode 重跑 effect 时 ref 已置位会把 setOpen 吃掉（本仓第二次踩，第一次是顶栏消耗徽标的 alive ref）。

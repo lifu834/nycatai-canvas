@@ -49,19 +49,16 @@ export default function IndexPage() {
     const previewItems = promptShowcase.filter(usableCover);
 
     return (
-        <main className="relative h-full overflow-y-auto bg-background bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] text-stone-950 dark:bg-[radial-gradient(rgba(245,245,244,.18)_1px,transparent_1px)] dark:text-stone-100">
+        <main className="relative h-full overflow-y-auto bg-background text-stone-950 dark:text-stone-100">
             <section className="relative mx-auto min-h-[calc(100vh-4rem)] max-w-7xl overflow-hidden px-6">
-                <div className="pointer-events-none absolute left-[15%] top-24 size-20 rounded-full border border-dashed border-stone-200 dark:border-stone-800" />
-                <div className="pointer-events-none absolute right-[23%] top-[48%] size-20 rounded-full border border-dashed border-stone-200 dark:border-stone-800" />
-
                 {/* NYCATAI hero：左对齐主张 + 双 CTA，对齐主站欢迎页（标题是主张不是产品名，重点词用赤陶）。
                     原上游 hero 是居中 aurora 渐变大字 + 橙/天蓝高亮，两个高亮色都不是品牌色。 */}
-                <div className="relative flex min-h-[420px] flex-col justify-center py-16 sm:py-20">
+                <div className="relative flex min-h-[460px] flex-col items-center justify-center py-16 text-center sm:py-20">
                     <h1 className="max-w-3xl text-balance text-4xl font-bold leading-[1.15] tracking-tight text-stone-950 sm:text-5xl lg:text-[52px] dark:text-stone-100">
                         <Trans i18nKey="home.heroTitle" components={{ accent: <span className="text-[#c4704b] dark:text-[#d4815c]" /> }} />
                     </h1>
-                    <p className="mt-4 max-w-2xl text-[15px] leading-7 tracking-wide text-stone-500 dark:text-stone-400">{t("home.heroSub")}</p>
-                    <div className="mt-7 flex flex-wrap items-center gap-3">
+                    <p className="mt-5 max-w-2xl text-balance text-[15px] leading-7 tracking-wide text-stone-500 dark:text-stone-400">{t("home.heroSub")}</p>
+                    <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                         <Button type="primary" size="large" disabled={!canvasHydrated} onClick={startNewCanvas} icon={<Zap className="size-[18px]" />}>
                             {t("home.newCanvas")}
                         </Button>
