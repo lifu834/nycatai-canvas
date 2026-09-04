@@ -99,8 +99,8 @@ describe("applyNycataiBootstrap · 渠道合并", () => {
         setUrl("/#apiKey=sk-x");
         applyNycataiBootstrap();
         const { config } = useConfigStore.getState();
-        expect(config.imageModel).toBe(encodeChannelModel("nycatai-image", "nano-banana-2"));
-        expect(config.videoModel).toBe(encodeChannelModel("nycatai-overseas", "kling-3.0"));
+        expect(config.imageModel).toBe(encodeChannelModel("nycatai-image", "nano-banana-2-1k"));
+        expect(config.videoModel).toBe(encodeChannelModel("nycatai-video", "kling-3.0-720p"));
         expect(config.textModel).toBe(encodeChannelModel("nycatai-codex", "gpt-5.5"));
         expect(config.audioModel).toBe(""); // audio 分组未接入，回落为空而非外部模型
         expect(config.model).toBe(config.imageModel);
@@ -135,14 +135,14 @@ describe("applyNycataiBootstrap · 渠道合并", () => {
         useConfigStore.setState((state) => ({
             config: {
                 ...state.config,
-                channels: state.config.channels.map((channel) => (channel.id === "nycatai-overseas" ? { ...channel, models: channel.models.map((model) => (model.name === "kling-3.0" ? { ...model, script: "return {url: 'x'}" } : model)) } : channel)),
+                channels: state.config.channels.map((channel) => (channel.id === "nycatai-video" ? { ...channel, models: channel.models.map((model) => (model.name === "kling-3.0-720p" ? { ...model, script: "return {url: 'x'}" } : model)) } : channel)),
             },
         }));
         setUrl("/#apiKey=sk-rotated");
         applyNycataiBootstrap();
-        const model = managedChannel("overseas")!.models.find((item) => item.name === "kling-3.0");
+        const model = managedChannel("video")!.models.find((item) => item.name === "kling-3.0-720p");
         expect(model!.script).toBe("return {url: 'x'}");
-        expect(managedChannel("overseas")!.apiKey).toBe("sk-rotated");
+        expect(managedChannel("video")!.apiKey).toBe("sk-rotated");
     });
 
     it("重复注入后模型选项列表无重复", () => {

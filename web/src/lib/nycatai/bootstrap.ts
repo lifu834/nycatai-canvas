@@ -3,7 +3,7 @@ import { createModelChannel, encodeChannelModel, modelOptionsFromChannels, useCo
 import { DEFAULT_GATEWAY, NYCATAI_CHANNEL_PREFIX, NYCATAI_GROUPS } from "./catalog";
 
 // NYCATAI 接入：**本站只接入 nycatai 自己的接口与模型**。
-// - 启动时无条件把渠道表规整为 4 个受管渠道（image/overseas/video/codex），并移除任何外部/自建渠道；
+// - 启动时无条件把渠道表规整为 3 个受管渠道（image/video/codex；260826 overseas 已并入 video），并移除任何外部/自建渠道；
 // - 主站一键拉起时用 hash fragment 带 key（hash 不进 CF/nginx 访问日志，沿用 studio2 教训），读完立即抹除；
 // - 用户已配置的 per-model 脚本与已有 key 在重注入时保留。
 

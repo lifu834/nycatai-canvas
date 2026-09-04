@@ -7,11 +7,18 @@ import type { ModelCapability } from "@/stores/use-config-store";
 // 后端按 SKU 名分档不变 —— 那是对每条上游渠道逐档验收过落盘像素的锚点；改成按 size 计价会失去这层
 // 保证（上游虚标档位反复出现：声称 4096 实出 1254²、声称 4K 只给 1024²、2560×1440 静默吸附成 4K）。
 //
-// 🔑 /v1/models **不是**可路由性的真相（nano-banana-pro-2k/-4k 不在列表却能路由）；
-//    判可路由用 scripts/canvas-catalog-check.py 的下单探测。
+// 🔑 判可路由仍用 scripts/canvas-catalog-check.py 的下单探测，不要只看 /v1/models。
+//    （260826 起 banana 六个 SKU 已全部在 /v1/models 可见 —— nano-banana 族移出了
+//    档位表，2K/4K 不再被当成"内部 SKU"隐藏；但"列表可见"与"当下可路由"仍是两回事。）
 // 🔑 价格单位是**人民币**；按秒/按次接口分不出来（quota_type=1 两者都用），只能人工标注。
 // 🔑 生图 `size` 只定宽高比、不是档位开关（唯一例外 ex-gpt-image-2 按 size 出档）；4K 写 3840x2160。
-export type NycataiGroup = "image" | "overseas" | "video" | "codex";
+// 260826：生图取消裸名 —— 1K 档改用显式 `-1k`，与视频线一致。裸名 nano-banana-2 /
+// nano-banana-pro 已不再是对外 SKU（暂时还能路由，等兜底渠道摘干净后失效）。
+// 生图主力已切到 image2api（渠道 #218），它按 SKU 名向上游强制下发尺寸；
+// type=24 的 secure/rolldek 直连保留为兜底，靠模型名后缀钉档位，同样不会失准。
+// 260826：overseas 已并入 video（两组的真实差别只是计费模型，而计费挂在模型上
+// 不在分组上），/overseas/ 前缀路由已下线 —— 这里留着会让 baseUrl 拼出 403。
+export type NycataiGroup = "image" | "video" | "codex";
 
 export type NycataiModelDef = {
     /** 真实 SKU 名（发给网关的 model 字段） */
@@ -54,12 +61,12 @@ export const NYCATAI_GROUPS: NycataiGroupDef[] = [
     {
         group: "image",
         channelName: "生图",
-        defaultModel: "nano-banana-2", // 冗余最厚（6 条渠道）
+        defaultModel: "nano-banana-2-1k", // 冗余最厚（image2api 背后 5 个上游）
         models: [
-            { name: "nano-banana-2", label: "Nano Banana 2", tier: "1K", capability: "image", price: { amount: 0.08, per: "image" }, redundancy: 6, note: "推荐默认，最快约 13s" },
+            { name: "nano-banana-2-1k", label: "Nano Banana 2", tier: "1K", capability: "image", price: { amount: 0.08, per: "image" }, redundancy: 5, note: "推荐默认，最快约 12s" },
             { name: "nano-banana-2-2k", label: "Nano Banana 2", tier: "2K", capability: "image", price: { amount: 0.11, per: "image" }, redundancy: 5, note: "真 2048²" },
             { name: "nano-banana-2-4k", label: "Nano Banana 2", tier: "4K", capability: "image", price: { amount: 0.14, per: "image" }, redundancy: 5, note: "真 4K" },
-            { name: "nano-banana-pro", label: "Nano Banana Pro", tier: "1K", capability: "image", price: { amount: 0.1, per: "image" }, redundancy: 5 },
+            { name: "nano-banana-pro-1k", label: "Nano Banana Pro", tier: "1K", capability: "image", price: { amount: 0.1, per: "image" }, redundancy: 3 },
             { name: "nano-banana-pro-2k", label: "Nano Banana Pro", tier: "2K", capability: "image", price: { amount: 0.13, per: "image" }, redundancy: 3 },
             { name: "nano-banana-pro-4k", label: "Nano Banana Pro", tier: "4K", capability: "image", price: { amount: 0.15, per: "image" }, redundancy: 3, note: "真 4096²" },
             { name: "gpt-image-2-1k", label: "GPT Image 2", tier: "1K", capability: "image", price: { amount: 0.02, per: "image" }, redundancy: 2, note: "号池原生输出 1254×1254，不是 1024²" },
@@ -69,16 +76,20 @@ export const NYCATAI_GROUPS: NycataiGroupDef[] = [
         ],
     },
     {
-        group: "overseas",
+        group: "video",
         channelName: "视频",
-        defaultModel: "kling-3.0", // 3 条渠道且最便宜
+        defaultModel: "kling-3.0-720p", // 全线最便宜(¥0.12/秒)；260826 定价=max(号池积分价, 候选×1.2)
         models: [
-            { name: "kling-3.0", label: "Kling 3.0", tier: "720p", capability: "video", price: { amount: 0.08, per: "second" }, redundancy: 3, note: "推荐默认" },
-            { name: "kling-3.0-1080p", label: "Kling 3.0", tier: "1080p", capability: "video", price: { amount: 0.12, per: "second" }, redundancy: 2 },
-            { name: "kling-3.0-turbo", label: "Kling 3.0 Turbo", capability: "video", price: { amount: 0.083, per: "second" }, redundancy: 1 },
-            { name: "kling-o3", label: "Kling O3", capability: "video", price: { amount: 0.14, per: "second" }, redundancy: 2 },
-            { name: "veo-3.1", label: "Veo 3.1", tier: "标准", capability: "video", price: { amount: 0.25, per: "second" }, redundancy: 2, note: "时长仅 4/6/8 秒" },
-            { name: "veo-3.1-fast", label: "Veo 3.1", tier: "Fast", capability: "video", price: { amount: 0.14, per: "second" }, redundancy: 2, note: "时长仅 4/6/8 秒" },
+            { name: "kling-3.0-720p", label: "Kling 3.0", tier: "720p", capability: "video", price: { amount: 0.12, per: "second" }, redundancy: 2, note: "推荐默认" },
+            { name: "kling-3.0-1080p", label: "Kling 3.0", tier: "1080p", capability: "video", price: { amount: 0.16, per: "second" }, redundancy: 2 },
+            { name: "kling-3.0-4k", label: "Kling 3.0", tier: "4K", capability: "video", price: { amount: 0.29, per: "second" }, redundancy: 2 },
+            { name: "kling-3.0-turbo-720p", label: "Kling 3.0 Turbo", tier: "720p", capability: "video", price: { amount: 0.14, per: "second" }, redundancy: 2 },
+            { name: "kling-3.0-turbo-1080p", label: "Kling 3.0 Turbo", tier: "1080p", capability: "video", price: { amount: 0.18, per: "second" }, redundancy: 2 },
+            { name: "kling-o3-720p", label: "Kling O3", tier: "720p", capability: "video", price: { amount: 0.16, per: "second" }, redundancy: 2 },
+            { name: "kling-o3-1080p", label: "Kling O3", tier: "1080p", capability: "video", price: { amount: 0.21, per: "second" }, redundancy: 2 },
+            { name: "kling-o3-4k", label: "Kling O3", tier: "4K", capability: "video", price: { amount: 0.52, per: "second" }, redundancy: 2 },
+            { name: "veo-3.1-fast", label: "Veo 3.1 Fast", tier: "1080p", capability: "video", price: { amount: 0.11, per: "second" }, redundancy: 1, note: "时长仅 4/6/8 秒" },
+            { name: "veo-3.1", label: "Veo 3.1", tier: "1080p", capability: "video", price: { amount: 0.28, per: "second" }, redundancy: 1, note: "时长仅 4/6/8 秒" },
             { name: "sd-2.0-720p", label: "Seedance 2.0", tier: "720p", capability: "video", price: { amount: 0.68, per: "second" }, redundancy: 4, note: "时长 4–15 秒" },
             { name: "sd-2.0-1080p", label: "Seedance 2.0", tier: "1080p", capability: "video", price: { amount: 1.55, per: "second" }, redundancy: 4 },
             { name: "sd-2.0-4k", label: "Seedance 2.0", tier: "4K", capability: "video", price: { amount: 6.2, per: "second" }, redundancy: 3 },
@@ -88,13 +99,8 @@ export const NYCATAI_GROUPS: NycataiGroupDef[] = [
             { name: "sd-2.5-720p", label: "Seedance 2.5", tier: "720p", capability: "video", price: { amount: 0.88, per: "second" }, redundancy: 1, fragile: true, note: "支持锁脸/参考视频/4–30 秒" },
             { name: "sd-2.5-1080p", label: "Seedance 2.5", tier: "1080p", capability: "video", price: { amount: 1.98, per: "second" }, redundancy: 1, fragile: true, note: "支持锁脸/参考视频/4–30 秒" },
             // leonardo-* 是同价别名，不重复暴露
-        ],
-    },
-    {
-        group: "video",
-        channelName: "视频·一口价",
-        // 不设 defaultModel：视频默认走 overseas 的 kling-3.0（按秒更便宜）
-        models: [
+            // ↓ 260826 分组合并：原独立的「视频·一口价」(video 组) 并入本频道。
+            //   按秒与按次从此并排展示，客户只需认一个「视频」入口。
             { name: "seedance-2.0", label: "Seedance 2.0 一口价", capability: "video", price: { amount: 2.85, per: "call" }, redundancy: 4, note: "4–15 秒同价" },
             { name: "minimax-h3-2k", label: "MiniMax H3", tier: "2K", capability: "video", price: { amount: 3.5, per: "call" }, redundancy: 4, note: "分辨率与时长固定" },
         ],
