@@ -1,4 +1,4 @@
-import { FileText, ImagePlus, Images, Maximize2, Settings2, Video } from "lucide-react";
+import { FileText, ImagePlus, Images, Maximize2, MessageSquare, Settings2, Video } from "lucide-react";
 
 export const navigationTools = [
     {
@@ -12,6 +12,11 @@ export const navigationTools = [
     {
         slug: "video",
         icon: Video,
+    },
+    {
+        // NYCATAI: 简易对话页（纯文本，不带工具）
+        slug: "chat",
+        icon: MessageSquare,
     },
     {
         slug: "prompts",

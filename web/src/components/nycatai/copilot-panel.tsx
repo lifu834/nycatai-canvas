@@ -169,7 +169,7 @@ export function NycataiCopilot() {
                     <Input.TextArea
                         value={draft}
                         onChange={(event) => setDraft(event.target.value)}
-                        onPressEnter={(event) => { if (!event.shiftKey) { event.preventDefault(); void send(); } }}
+                        onPressEnter={(event) => { if (event.shiftKey || event.nativeEvent.isComposing) return; event.preventDefault(); void send(); }}
                         placeholder={t("nycatai.copilot.placeholder")}
                         autoSize={{ minRows: 1, maxRows: 4 }}
                         disabled={running}

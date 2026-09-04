@@ -22,21 +22,30 @@
 | `web/src/stores/use-config-store.ts` | `modelOptionLabel` 对受管渠道返回友好名（"Nano Banana 2 · 4K"）且不拼渠道后缀 | 上游改标签函数时重新挂 |
 | `web/src/services/api/prompt-source-presets.ts` | DEFAULT_PROMPT_SOURCES 头部加 nycatai-official 内置源（同源 /nycatai-prompts.json） | 冲突时保留我方一行 |
 | `web/src/components/layout/app-config-modal.tsx` | 渠道 tab 整体替换为只读 `<NycataiChannelsPanel/>`（本站只接 nycatai，无自建渠道） | 上游改配置弹窗结构时重新挂 |
+| `web/src/lib/canvas/canvas-generation-helpers.ts` | 第 51 行 `node.metadata.images` → `node.metadata?.images`（上游遗留 TS18048，会让 `tsc --noEmit` 常红） | 上游自己修了就取上游 |
+| `web/src/constant/navigation-tools.ts` | 新增 `chat` 导航项（MessageSquare 图标，排在 video 与 prompts 之间） | 上游加/减导航项时保留我方一项 |
+| `web/src/router.tsx` | 新增 `/chat` 路由 + `ChatPage` import（2 行） | 冲突时保留我方两行 |
+| `web/src/pages/home/index.tsx` | 首页图墙：多取 36 条按「有封面」优先排序，无封面/加载失败退化成文字卡（上游直接渲染 `<img src={coverUrl}>`，源没有封面就是一片碎图） | 上游改图墙时重新挂 |
 | `web/src/components/layout/client-root-init.tsx` | 整文件重写：无条件 `applyNycataiBootstrap()`，**移除上游 ?baseUrl=/?apiKey= 外部接口导入** | 合并时保留我方版本 |
 
 ## nycatai 专属文件（无冲突面）
 
-- `web/src/lib/nycatai/catalog.ts` — 四分组模型目录（image/overseas/video/codex）+ 真实单价 + 冗余条数；按 nycatai-ops 校准包维护。
+- `web/src/lib/nycatai/catalog.ts` — 三分组模型目录（image/video/codex；260826 overseas 已并入 video）+ 真实单价 + 冗余条数；按 nycatai-ops 校准包维护。
 - `web/src/lib/nycatai/bootstrap.ts` — 启动时无条件规整为 4 个 `nycatai-` 受管渠道并移除外部渠道；保留 per-model 脚本与已注入 key；失效模型自动回落默认。
+- `web/src/lib/nycatai/chat.ts` + `chat.test.ts` — 简易对话（`/chat` 页）：复用 copilot 的 `/v1/responses` 流式客户端但 **tools 传空**；会话存 localStorage（留 100 条），上行只带最近 20 条（文本按 token 计费，历史会重复付费）。
+- `web/src/pages/chat/index.tsx` — 对话页本体（模型下拉 + 单价/计费规则 + 复制/存为资产 + 中断）。
 - `web/src/lib/nycatai/bootstrap.test.ts` + `web/vitest.config.ts` — 单测（`bun run test` / `node node_modules/vitest/vitest.mjs run`）；合并上游后必跑。
 
 ## 只接 NYCATAI（260824 定稿）
 
-- 渠道表在**启动时无条件规整**为 4 个受管渠道（`image`/`overseas`/`video`/`codex`），外部/自建渠道一律移除；上游 `?baseUrl=` 外部导入路径已废除，hash/query 里的 `baseUrl` 会被抹掉。
+- 渠道表在**启动时无条件规整**为 3 个受管渠道（`image`/`video`/`codex`），外部/自建渠道一律移除；上游 `?baseUrl=` 外部导入路径已废除，hash/query 里的 `baseUrl` 会被抹掉。
 - 配置弹窗的「渠道」tab = 只读面板（模型清单 + 真实单价 + 锁图标），没有新建/编辑/删除入口。
 - 目录数据源 = 生产 `abilities` + `ModelPrice`（见 nycatai-ops 校准包）；**`/v1/models` 不是可路由性的真相**（nano-banana-pro-2k/-4k 不在列表却能路由），判可路由用 `canvas-catalog-check.py` 的下单探测。
 
 ## 已知限制
+
+- `/chat` 与画布「编排助手」分工：前者纯文本无工具，后者能直接操作画布。两者共用 `codex` 渠道与 `config.textModel`。
+- codex 号池会在每个请求上注入约 4.4k tokens 的 Codex 人格 `instructions`（其中约 3.8k 走缓存），所以对话有固定的输入 token 底噪，短问题也不是零成本。
 
 - 网关 CORS 只放行 `*.nycatai.com` 源：**本地 dev（localhost 源）无法直连网关**，生图/视频/余额请求会被拒；顶栏消耗徽标此时显示"消耗查询失败"（优雅降级已验证）。全链路验证在生产域名（或加 hosts 映射）做。
 - 创意工坊令牌是 unlimited_quota，new-api subscription 端点对其返回占位大数 → 拿不到真实余额，顶栏展示「该密钥已消耗」（GetUsage）。用户级余额需 new-api 侧新端点，列为后续项。

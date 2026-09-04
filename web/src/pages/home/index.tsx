@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, FileText } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { App, Button, Image, Tag } from "antd";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +8,10 @@ import { fetchPrompts, type Prompt } from "@/services/api/prompts";
 import { navigationTools } from "@/constant/navigation-tools";
 import i18n from "@/i18n";
 import { cn } from "@/lib/utils";
+
+/** 图墙展示条数，以及为了挑出「有封面」的候选而多取的池子大小 */
+const SHOWCASE_SIZE = 12;
+const SHOWCASE_POOL_SIZE = 36;
 
 function Highlighter({ action, color, children }: { action: "highlight" | "underline"; color: string; children?: ReactNode }) {
     return (
@@ -28,14 +32,25 @@ export default function IndexPage() {
     const navigate = useNavigate();
     const [primaryTool] = navigationTools;
     const [promptShowcase, setPromptShowcase] = useState<Prompt[]>([]);
+    const [brokenCovers, setBrokenCovers] = useState<string[]>([]);
     const [previewIndex, setPreviewIndex] = useState(0);
     const [previewOpen, setPreviewOpen] = useState(false);
 
     useEffect(() => {
-        void fetchPrompts({ pageSize: 12 })
-            .then((data) => setPromptShowcase(data.items))
+        // NYCATAI: 多取一些再按「有封面」优先排序 —— 提示词源可以没有封面图（我们自己的官方源就没有），
+        // 直接把前 12 条塞进这个图墙会渲染出一片碎图。取 36 条挑出有图的顶到前面，不足再用文字卡补齐。
+        void fetchPrompts({ pageSize: SHOWCASE_POOL_SIZE })
+            .then((data) => {
+                const withCover = data.items.filter((item) => item.coverUrl);
+                const withoutCover = data.items.filter((item) => !item.coverUrl);
+                setPromptShowcase([...withCover, ...withoutCover].slice(0, SHOWCASE_SIZE));
+            })
             .catch((error) => message.error(error instanceof Error ? error.message : i18n.t("home.promptError")));
     }, [message]);
+
+    // 封面可能是外链（GitHub raw 等），加载失败时退化成文字卡，不留碎图
+    const usableCover = (item: Prompt) => Boolean(item.coverUrl) && !brokenCovers.includes(item.id);
+    const previewItems = promptShowcase.filter(usableCover);
 
     return (
         <main className="relative h-full overflow-y-auto bg-background bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] text-stone-950 dark:bg-[radial-gradient(rgba(245,245,244,.18)_1px,transparent_1px)] dark:text-stone-100">
@@ -75,7 +90,9 @@ export default function IndexPage() {
                                 key={item.id}
                                 type="button"
                                 onClick={() => {
-                                    setPreviewIndex(index);
+                                    const previewAt = previewItems.indexOf(item);
+                                    if (previewAt < 0) return navigate("/prompts");
+                                    setPreviewIndex(previewAt);
                                     setPreviewOpen(true);
                                 }}
                                 className={cn(
@@ -84,7 +101,18 @@ export default function IndexPage() {
                                     index === 3 && "md:col-span-2",
                                 )}
                             >
-                                <img src={item.coverUrl} alt={item.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
+                                {usableCover(item) ? (
+                                    <img
+                                        src={item.coverUrl}
+                                        alt={item.title}
+                                        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                                        onError={() => setBrokenCovers((ids) => (ids.includes(item.id) ? ids : [...ids, item.id]))}
+                                    />
+                                ) : (
+                                    <div className="grid h-full w-full place-items-center bg-gradient-to-br from-stone-200 to-stone-100 text-stone-400 transition duration-500 group-hover:scale-[1.03] dark:from-stone-800 dark:to-stone-900 dark:text-stone-600">
+                                        <FileText className="size-8" />
+                                    </div>
+                                )}
                                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/35 to-transparent p-4 text-white">
                                     <div className="mb-2 flex flex-wrap gap-1.5">
                                         {item.tags.slice(0, 2).map((tag) => (
@@ -110,7 +138,7 @@ export default function IndexPage() {
                 }}
             >
                 <div className="hidden">
-                    {promptShowcase.map((item) => (
+                    {previewItems.map((item) => (
                         <Image key={item.id} src={item.coverUrl} alt={item.title} />
                     ))}
                 </div>
