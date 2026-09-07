@@ -126,10 +126,14 @@ export async function storeGeneratedVideo(result: VideoGenerationResult): Promis
     if (result.blob) return uploadMediaFile(result.blob, "video");
     if (result.url) {
         try {
-            return await uploadMediaFile(result.url, "video");
+            // 🔑 这条回退路径是**无鉴权** fetch(见 uploadMediaFile)：网关的 401/403 JSON 同样会被存成"成片"。
+            // 落库前先确认它真的是视频，不是就退回裸 URL，让播放器直接去取（也便于用户看出是取片失败而非空视频）。
+            const file = await uploadMediaFile(result.url, "video");
+            if (file.bytes >= VIDEO_BLOB_MIN_BYTES && !/(json|text\/|html|xml)/i.test(file.mimeType || "")) return file;
         } catch {
-            return { url: result.url, storageKey: "", bytes: 0, mimeType: result.mimeType || "video/mp4" };
+            // 取片失败 → 走下面的裸 URL 回退
         }
+        return { url: result.url, storageKey: "", bytes: 0, mimeType: result.mimeType || "video/mp4" };
     }
     throw new Error(apiText("noPlayableVideo"));
 }
@@ -157,7 +161,7 @@ async function pollOpenAIVideoTask(config: AiConfig, task: VideoGenerationTask, 
     try {
         const video = unwrapVideoResponse((await axios.get<ApiVideoResponse>(aiApiUrl(config, `/videos/${task.id}`), { headers: aiHeaders(config), signal: options?.signal })).data);
         const url = videoResultUrl(video);
-        if (url) return { status: "completed", result: await videoResultFromUrl(url, options) };
+        if (url) return { status: "completed", result: await videoResultFromUrl(url, options, videoFetchHeaders(url, config)) };
         if (video.status === "completed") {
             const content = await axios.get<Blob>(aiApiUrl(config, `/videos/${task.id}/content`), { headers: aiHeaders(config), responseType: "blob", signal: options?.signal });
             await assertVideoBlob(content.data);
@@ -201,7 +205,7 @@ async function pollSeedanceTask(config: AiConfig, task: VideoGenerationTask, opt
     try {
         const state = unwrapSeedanceTask((await axios.get<ApiEnvelope<SeedanceTask>>(seedanceApiUrl(config, task.id), { headers: aiHeaders(config), signal: options?.signal })).data);
         const url = videoResultUrl(state);
-        if (url) return { status: "completed", result: await videoResultFromUrl(url, options) };
+        if (url) return { status: "completed", result: await videoResultFromUrl(url, options, videoFetchHeaders(url, config)) };
         if (state.status === "succeeded" || state.status === "completed") return { status: "failed", error: apiText("seedanceNoVideoUrl") };
         if (state.status === "failed" || state.status === "cancelled" || state.status === "expired") return { status: "failed", error: readApiErrorMessage(state.error?.message) || apiText(state.status === "expired" ? "seedanceVideoTimeout" : "seedanceVideoFailed") };
         return { status: "pending" };
@@ -278,15 +282,29 @@ async function resolveSeedanceAudioUrl(audio: ReferenceAudio) {
     return blobToDataUrl(blob);
 }
 
-async function videoResultFromUrl(url: string, options?: RequestOptions): Promise<VideoGenerationResult> {
+async function videoResultFromUrl(url: string, options?: RequestOptions, headers?: Record<string, string>): Promise<VideoGenerationResult> {
     try {
-        const response = await axios.get<Blob>(url, { responseType: "blob", signal: options?.signal });
+        const response = await axios.get<Blob>(url, { responseType: "blob", signal: options?.signal, ...(headers ? { headers } : {}) });
         await assertVideoBlob(response.data);
         return { blob: response.data };
     } catch (error) {
         if (axios.isCancel(error) || options?.signal?.aborted) throw error;
         return { url, mimeType: "video/mp4" };
     }
+}
+
+// 网关回给我们的 video_url 指向自家 API（/v1/videos/{id}/content），它**需要 Authorization**。
+// 不带头去取会拿到一段 401 JSON —— 260907 用户在视频工作台看到的「126 B 视频」就是它被当成成片存了下来。
+function isGatewayUrl(url: string, config: AiConfig) {
+    try {
+        return new URL(url, window.location.href).origin === new URL(aiApiUrl(config, "/"), window.location.href).origin;
+    } catch {
+        return false;
+    }
+}
+
+function videoFetchHeaders(url: string, config: AiConfig) {
+    return isGatewayUrl(url, config) ? aiHeaders(config) : undefined;
 }
 
 function assertVideoConfig(config: AiConfig, model: string) {
@@ -382,8 +400,19 @@ function statusMessage(status: number | undefined, fallback: string) {
     return status ? `${fallback}（${status}）` : fallback;
 }
 
+// 一段真视频至少有文件头；网关/边缘的错误响应都是几百字节的 JSON 或 HTML。
+// 兜底判据放在这里，保证任何一条取片路径都不会把错误页当成成片存下去。
+const VIDEO_BLOB_MIN_BYTES = 1024;
+
+function looksLikeVideoBlob(blob: Blob) {
+    return blob.size >= VIDEO_BLOB_MIN_BYTES && !/(json|text\/|html|xml)/i.test(blob.type || "");
+}
+
 async function assertVideoBlob(blob: Blob) {
-    if (!blob.type.includes("json")) return;
+    if (!blob.type.includes("json")) {
+        if (!looksLikeVideoBlob(blob)) throw new Error(apiText("videoDownloadFailed"));
+        return;
+    }
     let payload: { code?: number; msg?: string; error?: { message?: string } };
     try {
         payload = JSON.parse(await blob.text()) as { code?: number; msg?: string; error?: { message?: string } };
