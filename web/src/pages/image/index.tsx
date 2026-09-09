@@ -209,6 +209,10 @@ export default function ImagePage() {
                 }),
             );
             successCount ? message.success(t("imageWorkbench.generated")) : message.error(failed?.reason instanceof Error ? failed.reason.message : t("workbench.generationFailed"));
+        } catch (storeError) {
+            // 落库失败（IndexedDB 配额满 / 隐私模式 / 图片字节体检不过）此前只有 finally，
+            // 异常直接冒泡成 unhandled rejection：生成记录不写、提示不弹，用户看到"生成完什么都没有"。
+            message.error(storeError instanceof Error ? storeError.message : t("common.imageReadFailed"));
         } finally {
             setRunning(false);
         }

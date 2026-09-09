@@ -18,8 +18,22 @@ const imageLogStore = localforage.createInstance({ name: "infinite-canvas", stor
 const videoLogStore = localforage.createInstance({ name: "infinite-canvas", storeName: "video_generation_logs" });
 const objectUrls = new Map<string, string>();
 
+/**
+ * 取远端/data: URL 的图片字节。
+ * 上游 401/404/限流页都是"有 body 的 200-able 响应"，裸 fetch 直接 .blob() 会把错误 JSON
+ * 当成图片存进 IndexedDB —— 用户看到的就是"生成成功但图打不开、下载下来是坏文件"。
+ * 视频线已经栽过一次（见 NYCATAI-FORK-NOTES / memory canvas-video-401-blob-260907），这里同款体检。
+ */
+async function fetchImageBlob(url: string): Promise<Blob> {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(i18n.t("common.imageReadFailed"));
+    const blob = await response.blob();
+    if (/json|text|html|xml/i.test(blob.type)) throw new Error(i18n.t("common.imageReadFailed"));
+    return blob;
+}
+
 export async function uploadImage(input: string | Blob): Promise<UploadedImage> {
-    const blob = typeof input === "string" ? await (await fetch(input)).blob() : input;
+    const blob = typeof input === "string" ? await fetchImageBlob(input) : input;
     const storageKey = `image:${nanoid()}`;
     await store.setItem(storageKey, blob);
     const url = URL.createObjectURL(blob);
