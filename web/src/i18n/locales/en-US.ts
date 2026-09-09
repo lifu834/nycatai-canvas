@@ -186,6 +186,7 @@ export default {
         retrySuccess: "Retry succeeded",
     },
     imageWorkbench: {
+        inFlight: "{{count}} batches running",
         title: "Image Studio",
         promptPlaceholder: "Describe the subject, style, composition, lighting, and intended use",
         references: "Reference images",

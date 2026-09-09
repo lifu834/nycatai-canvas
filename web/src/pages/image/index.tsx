@@ -84,7 +84,7 @@ export default function ImagePage() {
     const [references, setReferences] = useState<ReferenceImage[]>([]);
     const [results, setResults] = useState<GenerationResult[]>([]);
     const [logs, setLogs] = useState<GenerationLog[]>([]);
-    const [running, setRunning] = useState(false);
+    const [inFlight, setInFlight] = useState(0);
     const [logsOpen, setLogsOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [promptDialogOpen, setPromptDialogOpen] = useState(false);
@@ -101,6 +101,11 @@ export default function ImagePage() {
     const updateAgentTask = useWorkbenchAgentStore((state) => state.updateTask);
     const processedCommandRef = useRef(0);
     const agentTaskIdRef = useRef<string | undefined>(undefined);
+    // 允许多批次并发：批次号自增，面板只认最新一批（旧批次完成后照常写进生成记录 + 弹提示）
+    const batchSeqRef = useRef(0);
+    const panelBatchRef = useRef(0);
+
+    const running = inFlight > 0;
 
     const model = effectiveConfig.imageModel || effectiveConfig.model;
     const canGenerate = Boolean(prompt.trim());
@@ -111,6 +116,20 @@ export default function ImagePage() {
         const timer = window.setInterval(() => setElapsedMs(performance.now() - startedAt), 1000);
         return () => window.clearInterval(timer);
     }, [running, startedAt]);
+
+    const beginBatch = () => {
+        const batchId = ++batchSeqRef.current;
+        panelBatchRef.current = batchId;
+        setInFlight((value) => {
+            if (value === 0) {
+                setStartedAt(performance.now());
+                setElapsedMs(0);
+            }
+            return value + 1;
+        });
+        return batchId;
+    };
+    const endBatch = () => setInFlight((value) => Math.max(0, value - 1));
 
     useEffect(() => {
         void refreshLogs();
@@ -170,15 +189,13 @@ export default function ImagePage() {
             return;
         }
 
-        setElapsedMs(0);
-        setRunning(true);
+        const batchId = beginBatch();
         if (agentTaskId) updateAgentTask(agentTaskId, { status: "running", error: undefined });
         setPreviewLog(null);
         setResults(Array.from({ length: generationCount }, () => ({ id: nanoid(), status: "pending" })));
         const batchStartedAt = performance.now();
-        setStartedAt(batchStartedAt);
 
-        const tasks = Array.from({ length: generationCount }, (_, index) => runGenerationSlot(index, snapshot));
+        const tasks = Array.from({ length: generationCount }, (_, index) => runGenerationSlot(index, snapshot, batchId));
 
         const result = await Promise.allSettled(tasks);
         const successImages = result.filter((item): item is PromiseFulfilledResult<GeneratedImage> => item.status === "fulfilled").map((item) => item.value);
@@ -214,7 +231,7 @@ export default function ImagePage() {
             // 异常直接冒泡成 unhandled rejection：生成记录不写、提示不弹，用户看到"生成完什么都没有"。
             message.error(storeError instanceof Error ? storeError.message : t("common.imageReadFailed"));
         } finally {
-            setRunning(false);
+            endBatch();
         }
     };
 
@@ -329,18 +346,22 @@ export default function ImagePage() {
         return { text, config: { ...effectiveConfig, model, count: "1" }, references: [...references] };
     };
 
-    const runGenerationSlot = async (index: number, snapshot: { text: string; config: AiConfig; references: ReferenceImage[] }) => {
+    const runGenerationSlot = async (index: number, snapshot: { text: string; config: AiConfig; references: ReferenceImage[] }, batchId: number) => {
         const itemStartedAt = performance.now();
+        // 并发时可能有多批在途：只有仍占着面板的那一批才允许改面板，旧批次照常落生成记录
+        const writePanel = (updater: (value: GenerationResult[]) => GenerationResult[]) => {
+            if (panelBatchRef.current === batchId) setResults(updater);
+        };
         try {
             const result = snapshot.references.length ? await requestEdit(snapshot.config, snapshot.text, snapshot.references) : await requestGeneration(snapshot.config, snapshot.text);
             const image = result[0];
             if (!image) throw new Error(t("imageWorkbench.missingResult"));
             const meta = await readImageMeta(image.dataUrl);
             const nextImage = { id: image.id, dataUrl: image.dataUrl, durationMs: performance.now() - itemStartedAt, width: meta.width, height: meta.height, bytes: getDataUrlByteSize(image.dataUrl) };
-            setResults((value) => updateResultAt(value, index, { status: "success", image: nextImage }));
+            writePanel((value) => updateResultAt(value, index, { status: "success", image: nextImage }));
             return nextImage;
         } catch (error) {
-            setResults((value) => updateResultAt(value, index, { status: "failed", error: error instanceof Error ? error.message : t("workbench.generationFailed") }));
+            writePanel((value) => updateResultAt(value, index, { status: "failed", error: error instanceof Error ? error.message : t("workbench.generationFailed") }));
             throw error;
         }
     };
@@ -352,7 +373,7 @@ export default function ImagePage() {
         setResults((value) => updateResultAt(value, index, { status: "pending", error: undefined, image: undefined }));
         const retryStartedAt = performance.now();
         try {
-            const image = await runGenerationSlot(index, snapshot);
+            const image = await runGenerationSlot(index, snapshot, panelBatchRef.current);
             const stored = await uploadImage(image.dataUrl);
             const logImage = { ...image, dataUrl: stored.url, storageKey: stored.storageKey, width: stored.width, height: stored.height, bytes: stored.bytes, mimeType: stored.mimeType };
             setResults((value) => updateResultAt(value, index, { image: { ...image, dataUrl: stored.url, storageKey: stored.storageKey } }));
@@ -499,7 +520,7 @@ export default function ImagePage() {
 
                         <div className="mt-auto pt-6">
                             <NycataiCostHint capability="image" model={model} count={effectiveConfig.count} />
-                            <Button type="primary" size="large" block icon={<Sparkles className="size-4" />} loading={running} disabled={!canGenerate || running} onClick={() => void generate()}>
+                            <Button type="primary" size="large" block icon={<Sparkles className="size-4" />} disabled={!canGenerate} onClick={() => void generate()}>
                                 {t("workbench.generate")}
                             </Button>
                         </div>
@@ -511,6 +532,7 @@ export default function ImagePage() {
                                 <h2 className="text-xl font-semibold">{t("workbench.results")}</h2>
                             </div>
                             {running ? <Tag className="m-0 px-2 py-1">{t("workbench.waiting", { time: formatDuration(elapsedMs) })}</Tag> : null}
+                            {inFlight > 1 ? <Tag className="m-0 px-2 py-1">{t("imageWorkbench.inFlight", { count: inFlight })}</Tag> : null}
                         </div>
                         {results.length ? (
                             <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
