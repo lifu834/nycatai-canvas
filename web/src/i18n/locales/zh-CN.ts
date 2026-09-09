@@ -186,6 +186,7 @@ export default {
         retrySuccess: "重试成功",
     },
     imageWorkbench: {
+        tooManyInFlight: "最多同时跑 {{count}} 批，等一批完成再发",
         inFlight: "{{count}} 批在途",
         title: "生图工作台",
         promptPlaceholder: "描述画面主体、风格、构图、光线和用途",

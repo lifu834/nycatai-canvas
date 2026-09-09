@@ -1,6 +1,7 @@
 import { decodeChannelModel } from "@/stores/use-config-store";
 
 import { findNycataiModelDef, NYCATAI_CHANNEL_PREFIX, NYCATAI_GROUPS, type NycataiModelDef } from "./catalog";
+import { liveModel } from "./pricing-sync";
 
 // 成本透明（P3）：从 catalog 的价格元数据算「生成前预估费用」。
 // 只对 nycatai- 受管渠道生效；无价格数据的模型返回 null（UI 不显示，宁缺毋滥）。
@@ -19,21 +20,32 @@ export function findNycataiModel(modelValue: string): NycataiModelDef | null {
     return def?.models.find((model) => model.name === decoded.model) || null;
 }
 
+/** 单价：网关现价优先，同步不到才回落 catalog 静态值（见 pricing-sync.ts 的分工说明） */
+function unitPrice(model: NycataiModelDef): number | null {
+    const live = liveModel(model.name);
+    if (live && typeof live.price === "number" && live.price > 0) return live.price;
+    return model.price ? model.price.amount : null;
+}
+
 export function estimateImageCost(modelValue: string, count: number): CostEstimate | null {
     const model = findNycataiModel(modelValue);
     if (!model?.price || model.price.per !== "image") return null;
+    const amount = unitPrice(model);
+    if (amount === null) return null;
     const n = Math.max(1, Math.floor(count) || 1);
-    return { amount: model.price.amount * n, fragile: Boolean(model.fragile) };
+    return { amount: amount * n, fragile: Boolean(model.fragile) };
 }
 
 export function estimateVideoCost(modelValue: string, seconds: number): CostEstimate | null {
     const model = findNycataiModel(modelValue);
     if (!model?.price) return null;
+    const amount = unitPrice(model);
+    if (amount === null) return null;
     if (model.price.per === "second") {
         const s = Math.max(1, Math.floor(seconds) || 1);
-        return { amount: model.price.amount * s, fragile: Boolean(model.fragile) };
+        return { amount: amount * s, fragile: Boolean(model.fragile) };
     }
-    if (model.price.per === "call") return { amount: model.price.amount, fragile: Boolean(model.fragile) };
+    if (model.price.per === "call") return { amount, fragile: Boolean(model.fragile) };
     return null;
 }
 
@@ -54,12 +66,16 @@ export function unitPriceLabel(sku: string): string | null {
     const model = findNycataiModelDef(sku);
     if (model?.price) {
         const unit = model.price.per === "second" ? "/秒" : model.price.per === "call" ? "/次" : "/张";
-        return `${model.approxPrice ? "≈" : ""}${formatCost(model.price.amount)}${unit}`;
+        const amount = unitPrice(model);
+        if (amount === null) return null;
+        return `${model.approxPrice ? "≈" : ""}${formatCost(amount)}${unit}`;
     }
     if (model?.tokenRatio) {
         // 文本模型按 token 计费：展示「输入/输出」两个价，用户最关心的就是这两个数
-        const input = tokenPricePerMillion(model.tokenRatio.input);
-        const output = tokenPricePerMillion(model.tokenRatio.input * model.tokenRatio.completionMultiplier);
+        const live = liveModel(model.name);
+        const ratio = live && typeof live.ratio === "number" && live.ratio > 0 ? live.ratio : model.tokenRatio.input;
+        const input = tokenPricePerMillion(ratio);
+        const output = tokenPricePerMillion(ratio * (live?.completionRatio || model.tokenRatio.completionMultiplier));
         return `¥${input.toFixed(2)}/¥${output.toFixed(2)}`;
     }
     return null;

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/u
 import { cn } from "@/lib/utils";
 import { modelOptionLabel, modelOptionName, selectableModelsByCapability, type AiConfig, type ModelCapability } from "@/stores/use-config-store";
 import { billingRuleLabel, unitPriceLabel } from "@/lib/nycatai/pricing";
+import { useLivePricingStore } from "@/lib/nycatai/pricing-sync";
 
 type ModelPickerProps = {
     config: AiConfig;
@@ -93,6 +94,8 @@ function emptyModelLabel(config: AiConfig, capability?: ModelCapability) {
 }
 
 function ModelLabel({ config, model, detailed = false }: { config: AiConfig; model: string; detailed?: boolean }) {
+    // 订阅网关定价同步：同步完成后单价要跟着刷新（值本身走 pricing.ts 的 getState 读）
+    useLivePricingStore((state) => state.fetchedAt);
     const sku = modelOptionName(model);
     const price = unitPriceLabel(sku);
     const rule = detailed ? billingRuleLabel(sku) : null;

@@ -1,6 +1,7 @@
 import { createModelChannel, encodeChannelModel, modelOptionsFromChannels, useConfigStore, type ModelChannel } from "@/stores/use-config-store";
 
 import { DEFAULT_GATEWAY, NYCATAI_CHANNEL_PREFIX, NYCATAI_GROUPS } from "./catalog";
+import { isRoutable, syncLivePricing } from "./pricing-sync";
 
 // NYCATAI 接入：**本站只接入 nycatai 自己的接口与模型**。
 // - 启动时无条件把渠道表规整为 3 个受管渠道（image/video/codex；260826 overseas 已并入 video），并移除任何外部/自建渠道；
@@ -46,11 +47,14 @@ export function buildNycataiChannels(gateway: string, apiKey: string, existing: 
             // 未带新 key 时沿用已注入的 key（刷新页面不会掉线）
             apiKey: apiKey || previous?.apiKey || "",
             apiFormat: "openai",
-            models: def.models.map((model) => ({
-                name: model.name,
-                capability: model.capability,
-                script: previous?.models.find((item) => item.name === model.name)?.script,
-            })),
+            // 网关已经不认的 SKU 直接不进渠道表（点了必失败）；定价表还没同步到时不过滤，fail-open
+            models: def.models
+                .filter((model) => isRoutable(model.name, def.group))
+                .map((model) => ({
+                    name: model.name,
+                    capability: model.capability,
+                    script: previous?.models.find((item) => item.name === model.name)?.script,
+                })),
         });
     });
 }
@@ -97,5 +101,11 @@ export function applyNycataiBootstrap(): boolean {
     const hasScrubTarget = SCRUB_KEYS.some((key) => hashParams.has(key) || searchParams.has(key));
     if (hasScrubTarget) scrubParams(hashParams, searchParams);
     ensureNycataiChannels(apiKey, gateway);
+    // 与后端对齐：拉一次 /api/pricing，拿到现价与"还挂不挂在这个分组下"，再规整一次渠道表。
+    // 不 await —— 目录静态值本来就是最后一次校准的结果，同步只是把它刷新，不该挡住首屏。
+    const key = apiKey || useConfigStore.getState().config.channels.find((channel) => channel.apiKey)?.apiKey || "";
+    void syncLivePricing(gateway || DEFAULT_GATEWAY, key).then((ok) => {
+        if (ok) ensureNycataiChannels("", gateway);
+    });
     return Boolean(apiKey);
 }

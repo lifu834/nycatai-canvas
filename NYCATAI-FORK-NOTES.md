@@ -21,7 +21,7 @@
 | `web/src/lib/app-theme.ts` | 点缀式换肤：colorPrimary/colorLink/选中态 → 陶土橙，中性色不动 | 上游重构主题结构时重新挂 |
 | `web/src/components/layout/app-providers.tsx` | ProConfigProvider 换到外层（其 dark 预设会派生覆盖 colorPrimary） | 上游改 provider 链时重点回归 |
 | `web/src/pages/canvas/index.tsx` | 头部插 `<NycataiTemplateGallery/>`（1 行 + import） | 上游改列表页头部时重新挂 |
-| `web/src/components/model-picker.tsx` | 下拉选项 `ModelLabel` 加单价（右对齐陶土橙）+ 计费规则副标题；触发按钮保持简洁 | 上游改选项渲染时重新挂 |
+| `web/src/components/model-picker.tsx` | 下拉选项 `ModelLabel` 加单价（右对齐陶土橙）+ 计费规则副标题 + 订阅 `useLivePricingStore.fetchedAt`（同步完成后刷新价格）；触发按钮保持简洁 | 上游改选项渲染时重新挂 |
 | `web/src/stores/use-config-store.ts` | `modelOptionLabel` 对受管渠道返回友好名（"Nano Banana 2 · 4K"）且不拼渠道后缀 | 上游改标签函数时重新挂 |
 | `web/src/services/api/prompt-source-presets.ts` | DEFAULT_PROMPT_SOURCES 头部加 nycatai-official 内置源（同源 /nycatai-prompts.json） | 冲突时保留我方一行 |
 | `web/src/components/layout/app-config-modal.tsx` | 渠道 tab 整体替换为只读 `<NycataiChannelsPanel/>`（本站只接 nycatai，无自建渠道） | 上游改配置弹窗结构时重新挂 |
@@ -38,6 +38,11 @@
 - `web/src/lib/nycatai/catalog.ts` — 三分组模型目录（image/video/codex；260826 overseas 已并入 video）+ 真实单价 + 冗余条数；按 nycatai-ops 校准包维护。
 - `web/src/lib/nycatai/bootstrap.ts` — 启动时无条件规整为 4 个 `nycatai-` 受管渠道并移除外部渠道；保留 per-model 脚本与已注入 key；失效模型自动回落默认。
 - `web/src/components/nycatai/template-gallery.tsx` — 模板画廊；`autoOpen` 用 effect 直接 `setOpen(true)`，**不要加「已打开过」的 ref 守卫**：StrictMode 重跑 effect 时 ref 已置位会把 setOpen 吃掉（本仓第二次踩，第一次是顶栏消耗徽标的 alive ref）。
+- `web/src/lib/nycatai/pricing-sync.ts` + `pricing-sync.test.ts` — **与后端对齐模型目录**：启动时拉一次 `/api/pricing`，
+  单价（`model_price` / `model_ratio` + `completion_ratio`）、计费单位（`billing_unit`: call/second/缺席=token）、
+  以及"还挂不挂在这个分组下"（`enable_groups`）全部以网关为准；catalog.ts 退化成**展示信息表**（友好名/档位/线路数/说明）。
+  ⇒ **改价、下架不用动代码**；**新增模型仍要在 catalog.ts 补一行**（网关不提供友好名，且会吐 `leonardo-*` 这类隐藏别名）。
+  拉取失败一律 fail-open（保留静态价与全量模型）。
 - `web/src/lib/nycatai/chat.ts` + `chat.test.ts` — 简易对话（`/chat` 页）：复用 copilot 的 `/v1/responses` 流式客户端但 **tools 传空**；会话存 localStorage（留 100 条），上行只带最近 20 条（文本按 token 计费，历史会重复付费）。
 - `web/src/pages/chat/index.tsx` — 对话页本体（模型下拉 + 单价/计费规则 + 复制/存为资产 + 中断）。
 - `web/src/lib/nycatai/bootstrap.test.ts` + `web/vitest.config.ts` — 单测（`bun run test` / `node node_modules/vitest/vitest.mjs run`）；合并上游后必跑。

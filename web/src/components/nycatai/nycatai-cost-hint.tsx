@@ -2,10 +2,12 @@ import { useTranslation } from "react-i18next";
 import { Coins } from "lucide-react";
 
 import { estimateImageCost, estimateVideoCost, formatCost, type CostEstimate } from "@/lib/nycatai/pricing";
+import { useLivePricingStore } from "@/lib/nycatai/pricing-sync";
 
 // 生成按钮上方的预估费用行（TapNow 积分不透明的反面）。无价格数据时渲染 null，不打扰。
 export function NycataiCostHint({ capability, model, count, seconds }: { capability: "image" | "video"; model: string; count?: string | number; seconds?: string | number }) {
     const { t } = useTranslation();
+    useLivePricingStore((state) => state.fetchedAt);
     let estimate: CostEstimate | null = null;
     if (capability === "image") {
         estimate = estimateImageCost(model, Number(count) || 1);

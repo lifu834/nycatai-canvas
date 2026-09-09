@@ -34,6 +34,9 @@ type GeneratedImage = {
     mimeType?: string;
 };
 
+/** 在途批次上限：并发是真花钱的，按住不放能连点出十几批，这里挡一下 */
+const MAX_IN_FLIGHT_BATCHES = 3;
+
 type GenerationResult = {
     id: string;
     status: "pending" | "success" | "failed";
@@ -180,6 +183,12 @@ export default function ImagePage() {
             message.warning(t("workbench.configFirst"));
             openConfigDialog(true);
             if (agentTaskId) updateAgentTask(agentTaskId, { status: "failed", error: t("imageWorkbench.configIncomplete") });
+            return;
+        }
+
+        if (inFlight >= MAX_IN_FLIGHT_BATCHES) {
+            message.warning(t("imageWorkbench.tooManyInFlight", { count: MAX_IN_FLIGHT_BATCHES }));
+            if (agentTaskId) updateAgentTask(agentTaskId, { status: "failed", error: t("imageWorkbench.tooManyInFlight", { count: MAX_IN_FLIGHT_BATCHES }) });
             return;
         }
 
@@ -520,7 +529,7 @@ export default function ImagePage() {
 
                         <div className="mt-auto pt-6">
                             <NycataiCostHint capability="image" model={model} count={effectiveConfig.count} />
-                            <Button type="primary" size="large" block icon={<Sparkles className="size-4" />} disabled={!canGenerate} onClick={() => void generate()}>
+                            <Button type="primary" size="large" block icon={<Sparkles className="size-4" />} disabled={!canGenerate || inFlight >= MAX_IN_FLIGHT_BATCHES} onClick={() => void generate()}>
                                 {t("workbench.generate")}
                             </Button>
                         </div>

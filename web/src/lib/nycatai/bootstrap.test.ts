@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { defaultConfig, defaultWebdavSyncConfig, encodeChannelModel, useConfigStore, type ModelChannel } from "@/stores/use-config-store";
 
@@ -29,7 +29,12 @@ beforeEach(() => {
     localStorage.clear();
     resetStore();
     setUrl("/");
+    // applyNycataiBootstrap 会顺带拉一次 /api/pricing 与后端对齐；单测里不打真网络，
+    // 让它直接失败走 fail-open 分支（渠道表保留 catalog 全量，正是这些用例的前提）。
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 500 })));
 });
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("applyNycataiBootstrap · 参数解析", () => {
     it("无参数时返回 false，但仍把渠道表规整为受管渠道（只接 nycatai）", () => {
